@@ -17,7 +17,7 @@ pnpm prisma:generate
 pnpm start:dev
 ```
 
-Swagger UI: `http://localhost:3000/api`
+Swagger UI: `http://localhost:3001/api`
 
 
 ## Setup (5 minutes)
@@ -32,7 +32,7 @@ pnpm install
 The `.env` file is already configured with your AWS RDS connection:
 ```env
 DATABASE_URL="postgresql://master:Sberry%232026@sberry-dev-db.cy9ooyg60e74.us-east-1.rds.amazonaws.com:5432/postgres?schema=public&sslmode=require"
-PORT=3000
+PORT=3001
 ORM_ADAPTER=prisma
 JWT_SECRET=your-secret-key
 JWT_EXPIRES_IN=1d
@@ -60,7 +60,7 @@ pnpm start:dev
 
 | Variable | Default | Description |
 |---|---|---|
-| `PORT` | `3000` | HTTP port |
+| `PORT` | `3001` | HTTP port |
 | `NODE_ENV` | `development` | Runtime environment |
 | `ORM_ADAPTER` | `prisma` | `prisma` or `drizzle` |
 | `DATABASE_URL` | — | PostgreSQL connection string |

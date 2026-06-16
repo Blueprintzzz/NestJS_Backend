@@ -5,17 +5,91 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton model — replace or extend this when scaffolding your domain.
-// Follow the conventions: UUID pk, timestamps, optional soft-delete.
-// ---------------------------------------------------------------------------
 model Example {
   id          String   @id @default(uuid())
   name        String
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Booking {
+  id                 String             @id @default(uuid())
+  bookingNumber      String             @unique
+  userId             String
+  tourPackageId      String
+  vehicleId          String?
+  startDate          DateTime
+  endDate            DateTime
+  numberOfPassengers Int
+  totalCost          Decimal            @db.Decimal(10, 2)
+  advancePayment     Decimal?           @db.Decimal(10, 2)
+  remainingAmount    Decimal            @db.Decimal(10, 2)
+  status             BookingStatus      @default(PENDING)
+  paymentStatus      PaymentStatus      @default(NOT_PAID)
+  specialRequests    String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  passengers         BookingPassenger[]
+  payments           BookingPayment[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model BookingPassenger {
+  id             String   @id @default(uuid())
+  bookingId      String
+  passengerName  String
+  email          String
+  phone          String
+  dateOfBirth    DateTime
+  passportNumber String?
+  createdAt      DateTime @default(now())
+  booking        Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+}
+
+model BookingPayment {
+  id            String                   @id @default(uuid())
+  bookingId     String
+  amount        Decimal                  @db.Decimal(10, 2)
+  paymentMethod PaymentMethod
+  paymentDate   DateTime
+  transactionId String?
+  status        PaymentTransactionStatus @default(PENDING)
+  createdAt     DateTime                 @default(now())
+  booking       Booking                  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  NOT_PAID
+  PARTIAL
+  PAID
+}
+
+enum PaymentMethod {
+  CARD
+  BANK_TRANSFER
+  CASH
+  ONLINE
+}
+
+enum PaymentTransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
 }

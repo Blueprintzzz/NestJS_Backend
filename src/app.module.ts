@@ -6,6 +6,7 @@ import { PrismaService } from './prisma/prisma.service';
 import { DrizzleService } from './drizzle/drizzle.service';
 import { HealthController } from './health.controller';
 import { ExampleModule } from './modules/example/example.module';
+import { BookingModule } from './modules/booking/booking.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ExampleModule } from './modules/example/example.module';
       delimiter: '.',
     }),
     ExampleModule,
+    BookingModule,
   ],
   controllers: [HealthController],
   providers: [PrismaService, DrizzleService],

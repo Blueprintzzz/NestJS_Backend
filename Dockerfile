@@ -6,5 +6,5 @@ COPY package.json pnpm-lock.yaml .npmrc ./
 RUN pnpm install --frozen-lockfile --prod=false --shamefully-hoist
 COPY . .
 RUN npx prisma generate
-EXPOSE 3000
+EXPOSE 3001
 CMD ["pnpm", "run", "start:dev"]
