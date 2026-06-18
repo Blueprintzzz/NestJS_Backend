@@ -7,6 +7,7 @@ export class ExampleCreatedListener {
   @OnEvent('example.created')
   handleExampleCreated(payload: ExampleCreatedEvent): void {
     // TODO: replace with real side-effects (emails, audit log, etc.)
-    console.log('Handling example.created', payload.example.id);
+    const id = payload.example.id.replace(/[\r\n]/g, '');
+    console.log('Handling example.created', id);
   }
 }

@@ -31,7 +31,7 @@ pnpm install
 ### 2. Configure Environment
 The `.env` file is already configured with your AWS RDS connection:
 ```env
-DATABASE_URL="postgresql://master:Sberry%232026@sberry-dev-db.cy9ooyg60e74.us-east-1.rds.amazonaws.com:5432/postgres?schema=public&sslmode=require"
+DATABASE_URL=postgresql://<user>:<password>@<host>/<db>
 PORT=3001
 ORM_ADAPTER=prisma
 JWT_SECRET=your-secret-key

@@ -6,7 +6,8 @@ import { BookingCancelledEvent } from '../events/booking-cancelled.event';
 export class BookingCancelledListener {
   @OnEvent('booking.cancelled')
   handle(payload: BookingCancelledEvent): void {
-    console.log(`[booking.cancelled] bookingNumber=${payload.booking.bookingNumber}`);
+    const bookingNumber = payload.booking.bookingNumber.replace(/[\r\n]/g, '');
+    console.log(`[booking.cancelled] bookingNumber=${bookingNumber}`);
     // TODO: send cancellation email
   }
 }

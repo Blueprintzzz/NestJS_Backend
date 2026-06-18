@@ -6,7 +6,9 @@ import { BookingCreatedEvent } from '../events/booking-created.event';
 export class BookingCreatedListener {
   @OnEvent('booking.created')
   handle(payload: BookingCreatedEvent): void {
-    console.log(`[booking.created] bookingNumber=${payload.booking.bookingNumber} userId=${payload.booking.userId}`);
+    const bookingNumber = payload.booking.bookingNumber.replace(/[\r\n]/g, '');
+    const userId = payload.booking.userId.replace(/[\r\n]/g, '');
+    console.log(`[booking.created] bookingNumber=${bookingNumber} userId=${userId}`);
     // TODO: send confirmation email
   }
 }
