@@ -52,7 +52,8 @@ export class PrismaVehicleRepository implements IVehicleRepository {
   }
 
   async update(id: string, dto: UpdateVehicleDto): Promise<VehicleEntity> {
-    const v = await this.prisma.vehicle.update({ where: { id }, data: dto as any, include: { availability: false } });
+    const { id: _id, availability, createdAt, updatedAt, ...data } = dto as any;
+    const v = await this.prisma.vehicle.update({ where: { id }, data, include: { availability: false } });
     return mapVehicle(v);
   }
 
