@@ -1,0 +1,98 @@
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
+import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { VehicleType } from '@prisma/client';
+import { CheckAvailabilityDto, CreateVehicleDto, UpdateVehicleDto, VehicleQueryDto } from '../dto/vehicle.dto';
+import { VehiclesService } from '../services/vehicles.service';
+
+@ApiTags('vehicles')
+@Controller('vehicles')
+export class VehiclesController {
+  constructor(private readonly vehiclesService: VehiclesService) {}
+
+  @Post()
+  @ApiOperation({ summary: 'Create vehicle (admin)' })
+  create(@Body() dto: CreateVehicleDto) {
+    return this.vehiclesService.createVehicle(dto);
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'List vehicles with filters' })
+  findAll(@Query() query: VehicleQueryDto) {
+    return this.vehiclesService.getAllVehicles(query);
+  }
+
+  @Get('recommendations')
+  @ApiOperation({ summary: 'Get vehicle recommendations' })
+  getRecommendations(
+    @Query('numberOfTravelers') numberOfTravelers: number,
+    @Query('budget') budget: number,
+    @Query('tripDays') tripDays: number,
+  ) {
+    return this.vehiclesService.getRecommendations(+numberOfTravelers, +budget, +tripDays);
+  }
+
+  @Get('type/:type')
+  @ApiOperation({ summary: 'Get vehicles by type' })
+  @ApiParam({ name: 'type', enum: VehicleType })
+  findByType(@Param('type') type: VehicleType, @Query() query: VehicleQueryDto) {
+    return this.vehiclesService.getVehiclesByType(type, query);
+  }
+
+  @Post('check-availability')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Check vehicle availability' })
+  checkAvailability(@Body() dto: CheckAvailabilityDto) {
+    return this.vehiclesService.checkAvailability(dto);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get vehicle by ID' })
+  @ApiParam({ name: 'id' })
+  findOne(@Param('id') id: string) {
+    return this.vehiclesService.getVehicleById(id);
+  }
+
+  @Get(':id/availability')
+  @ApiOperation({ summary: 'Get availability calendar for vehicle' })
+  @ApiParam({ name: 'id' })
+  getAvailability(@Param('id') id: string) {
+    return this.vehiclesService.getAvailabilityCalendar(id);
+  }
+
+  @Post(':id/reserve')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reserve vehicle (internal)' })
+  @ApiParam({ name: 'id' })
+  reserve(
+    @Param('id') vehicleId: string,
+    @Body() body: { bookingId: string; startDate: string; endDate: string },
+  ) {
+    return this.vehiclesService.reserveVehicle(vehicleId, body.bookingId, body.startDate, body.endDate);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update vehicle (admin)' })
+  @ApiParam({ name: 'id' })
+  update(@Param('id') id: string, @Body() dto: UpdateVehicleDto) {
+    return this.vehiclesService.updateVehicle(id, dto);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete vehicle (admin)' })
+  @ApiParam({ name: 'id' })
+  remove(@Param('id') id: string) {
+    return this.vehiclesService.deleteVehicle(id);
+  }
+}

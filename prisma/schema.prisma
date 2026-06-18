@@ -222,47 +222,53 @@ model VehicleAvailability {
 // ─── Map / District / Attraction ─────────────────────────────────────────────
 
 model District {
-  id                 String       @id @default(uuid())
+  id                 String       @id @default(cuid())
   name               String       @unique
-  description        String
-  weatherInfo        String?
+  description        String       @db.Text
+  weatherInfo        Json
   bestVisitingSeason String?
-  latitude           Float
-  longitude          Float
+  latitude           Decimal      @db.Decimal(10, 8)
+  longitude          Decimal      @db.Decimal(11, 8)
   coverImage         String?
-  status             ResourceStatus @default(ACTIVE)
   featured           Boolean      @default(false)
+  status             String       @default("ACTIVE")
   attractions        Attraction[]
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
 
-  @@index([status])
+  @@index([featured])
 }
 
 model Attraction {
-  id                   String             @id @default(uuid())
-  districtId           String
-  name                 String
-  description          String
-  category             AttractionCategory
-  images               Json               @default("[]")
-  travelTips           String?
-  estimatedVisitingTime String?
-  latitude             Float
-  longitude            Float
-  openingHours         String?
-  entryFee             Decimal?           @db.Decimal(10, 2)
-  district             District           @relation(fields: [districtId], references: [id], onDelete: Cascade)
+  id                    String   @id @default(cuid())
+  districtId            String
+  district              District @relation(fields: [districtId], references: [id], onDelete: Cascade)
+  name                  String
+  description           String   @db.Text
+  category              String
+  images                Json     @default("[]")
+  travelTips            String   @db.Text
+  estimatedVisitingTime String
+  latitude              Decimal  @db.Decimal(10, 8)
+  longitude             Decimal  @db.Decimal(11, 8)
+  openingHours          String?
+  entryFee              Decimal  @db.Decimal(10, 2)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   @@index([districtId])
   @@index([category])
 }
 
 model TourCategory {
-  id          String          @id @default(uuid())
-  name        PackageCategory @unique
-  description String
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String   @db.Text
   icon        String?
   color       String?
-  featured    Boolean         @default(false)
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 // ─── Enums ───────────────────────────────────────────────────────────────────
@@ -349,11 +355,3 @@ enum VehicleType {
   LUXURY
 }
 
-enum AttractionCategory {
-  TEMPLE
-  BEACH
-  MOUNTAIN
-  WATERFALL
-  HISTORIC
-  WILDLIFE
-}
