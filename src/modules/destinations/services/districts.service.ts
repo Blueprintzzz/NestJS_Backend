@@ -25,7 +25,7 @@ export class DistrictsService {
   }
 
   async getFeaturedDistricts(): Promise<DistrictEntity[]> {
-    return this.repo.findFeatured(6);
+    return this.repo.findFeatured(25);
   }
 
   async createDistrict(dto: CreateDistrictDto): Promise<DistrictEntity> {
