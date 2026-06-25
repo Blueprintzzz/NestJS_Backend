@@ -133,21 +133,10 @@ model Review {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   booking     Booking       @relation(fields: [bookingId], references: [id])
-  photos      ReviewPhoto[]
 
   @@index([userId])
   @@index([status])
   @@index([bookingId])
-}
-
-model ReviewPhoto {
-  id         String   @id @default(uuid())
-  reviewId   String
-  photoUrl   String
-  uploadedAt DateTime @default(now())
-  review     Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-
-  @@index([reviewId])
 }
 
 // ─── Inquiry ─────────────────────────────────────────────────────────────────
