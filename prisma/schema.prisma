@@ -16,28 +16,31 @@ model Example {
 }
 
 model Booking {
-  id                 String               @id @default(uuid())
-  bookingNumber      String               @unique
+  id                 String             @id @default(uuid())
+  bookingNumber      String             @unique
   userId             String
   tourPackageId      String
   vehicleId          String?
   startDate          DateTime
   endDate            DateTime
   numberOfPassengers Int
-  totalCost          Decimal              @db.Decimal(10, 2)
-  advancePayment     Decimal?             @db.Decimal(10, 2)
-  remainingAmount    Decimal              @db.Decimal(10, 2)
-  status             BookingStatus        @default(PENDING)
-  paymentStatus      PaymentStatus        @default(NOT_PAID)
+  totalCost          Decimal            @db.Decimal(10, 2)
+  advancePayment     Decimal?           @db.Decimal(10, 2)
+  remainingAmount    Decimal            @db.Decimal(10, 2)
+  status             BookingStatus      @default(PENDING)
+  paymentStatus      PaymentStatus      @default(NOT_PAID)
   specialRequests    String?
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
   passengers         BookingPassenger[]
   payments           BookingPayment[]
   reviews            Review[]
-  vehicleAvailability VehicleAvailability[]
+  tourPackage        TourPackage        @relation(fields: [tourPackageId], references: [id], onDelete: Cascade)
+  vehicle            Vehicle?           @relation(fields: [vehicleId], references: [id])
 
   @@index([userId])
+  @@index([tourPackageId])
+  @@index([vehicleId])
   @@index([status])
   @@index([createdAt])
 }
@@ -73,25 +76,30 @@ model BookingPayment {
 // ─── Tour Package ───────────────────────────────────────────────────────────
 
 model TourPackage {
-  id           String              @id @default(uuid())
-  name         String
-  description  String
-  category     PackageCategory
-  duration     Int
-  basePrice    Decimal             @db.Decimal(10, 2)
-  highlights   Json                @default("[]")
-  bestSeason   String
-  maxCapacity  Int
-  images       Json                @default("[]")
-  status       ResourceStatus      @default(ACTIVE)
-  featured     Boolean             @default(false)
-  adminId      String
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
-  itineraries  PackageItinerary[]
-  inclusions   PackageInclusion[]
+  id               String                @id @default(uuid())
+  name             String
+  description      String
+  category         PackageCategory
+  duration         Int
+  basePrice        Decimal               @db.Decimal(10, 2)
+  highlights       Json                  @default("[]")
+  bestSeason       String
+  maxCapacity      Int
+  images           Json                  @default("[]")
+  status           ResourceStatus        @default(ACTIVE)
+  featured         Boolean               @default(false)
+  adminId          String
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  categoryId       String?
+  tourCategory     TourCategory?         @relation(fields: [categoryId], references: [id])
+  itineraries      PackageItinerary[]
+  inclusions       PackageInclusion[]
+  bookings         Booking[]
+  packageDistricts TourPackageDistrict[]
 
   @@index([category])
+  @@index([categoryId])
   @@index([status])
 }
 
@@ -121,18 +129,18 @@ model PackageInclusion {
 // ─── Review ─────────────────────────────────────────────────────────────────
 
 model Review {
-  id          String        @id @default(uuid())
+  id          String       @id @default(uuid())
   bookingId   String
   userId      String
   rating      Int
   title       String
   description String
-  images      Json          @default("[]")
-  status      ReviewStatus  @default(PENDING)
-  helpful     Int           @default(0)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  booking     Booking       @relation(fields: [bookingId], references: [id])
+  images      Json         @default("[]")
+  status      ReviewStatus @default(PENDING)
+  helpful     Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  booking     Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([status])
@@ -163,12 +171,12 @@ model Inquiry {
 }
 
 model InquiryResponse {
-  id                  String   @id @default(uuid())
-  inquiryId           String
-  respondedByAdminId  String
-  response            String
-  createdAt           DateTime @default(now())
-  inquiry             Inquiry  @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  id                 String   @id @default(uuid())
+  inquiryId          String
+  respondedByAdminId String
+  response           String
+  createdAt          DateTime @default(now())
+  inquiry            Inquiry  @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
 
   @@index([inquiryId])
 }
@@ -189,19 +197,18 @@ model Vehicle {
   createdAt          DateTime              @default(now())
   updatedAt          DateTime              @updatedAt
   availability       VehicleAvailability[]
+  bookings           Booking[]
 
   @@index([type])
   @@index([status])
 }
 
 model VehicleAvailability {
-  id              String   @id @default(uuid())
-  vehicleId       String
-  date            DateTime @db.Date
-  isAvailable     Boolean  @default(true)
-  bookedByBookingId String?
-  vehicle         Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-  booking         Booking? @relation(fields: [bookedByBookingId], references: [id])
+  id          String   @id @default(uuid())
+  vehicleId   String
+  date        DateTime @db.Date
+  isAvailable Boolean  @default(true)
+  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
 
   @@unique([vehicleId, date])
   @@index([vehicleId])
@@ -211,19 +218,20 @@ model VehicleAvailability {
 // ─── Map / District / Attraction ─────────────────────────────────────────────
 
 model District {
-  id                 String       @id @default(cuid())
-  name               String       @unique
-  description        String       @db.Text
+  id                 String                @id @default(cuid())
+  name               String                @unique
+  description        String                @db.Text
   weatherInfo        Json
   bestVisitingSeason String?
-  latitude           Decimal      @db.Decimal(10, 8)
-  longitude          Decimal      @db.Decimal(11, 8)
+  latitude           Decimal               @db.Decimal(10, 8)
+  longitude          Decimal               @db.Decimal(11, 8)
   coverImage         String?
-  featured           Boolean      @default(false)
-  status             String       @default("ACTIVE")
+  featured           Boolean               @default(false)
+  status             String                @default("ACTIVE")
   attractions        Attraction[]
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
+  packageDistricts   TourPackageDistrict[]
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
 
   @@index([featured])
 }
@@ -250,14 +258,27 @@ model Attraction {
 }
 
 model TourCategory {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  description String   @db.Text
+  id          String        @id @default(cuid())
+  name        String        @unique
+  description String        @db.Text
   icon        String?
   color       String?
-  featured    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  featured    Boolean       @default(false)
+  packages    TourPackage[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model TourPackageDistrict {
+  id            String      @id @default(uuid())
+  tourPackageId String
+  districtId    String
+  tourPackage   TourPackage @relation(fields: [tourPackageId], references: [id], onDelete: Cascade)
+  district      District    @relation(fields: [districtId], references: [id], onDelete: Cascade)
+
+  @@unique([tourPackageId, districtId])
+  @@index([tourPackageId])
+  @@index([districtId])
 }
 
 // ─── Enums ───────────────────────────────────────────────────────────────────
@@ -343,4 +364,3 @@ enum VehicleType {
   MINIBUS
   LUXURY
 }
-
