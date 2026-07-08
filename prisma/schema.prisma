@@ -32,11 +32,12 @@ model Booking {
   specialRequests    String?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
-  passengers         BookingPassenger[]
-  payments           BookingPayment[]
-  reviews            Review[]
-  tourPackage        TourPackage        @relation(fields: [tourPackageId], references: [id], onDelete: Cascade)
-  vehicle            Vehicle?           @relation(fields: [vehicleId], references: [id])
+  passengers           BookingPassenger[]
+  payments             BookingPayment[]
+  reviews              Review[]
+  vehicleAvailability  VehicleAvailability[]
+  tourPackage          TourPackage        @relation(fields: [tourPackageId], references: [id], onDelete: Cascade)
+  vehicle              Vehicle?           @relation(fields: [vehicleId], references: [id])
 
   @@index([userId])
   @@index([tourPackageId])
@@ -204,15 +205,18 @@ model Vehicle {
 }
 
 model VehicleAvailability {
-  id          String   @id @default(uuid())
-  vehicleId   String
-  date        DateTime @db.Date
-  isAvailable Boolean  @default(true)
-  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  id                String   @id @default(uuid())
+  vehicleId         String
+  date              DateTime @db.Date
+  isAvailable       Boolean  @default(true)
+  bookedByBookingId String?
+  booking           Booking? @relation(fields: [bookedByBookingId], references: [id])
+  vehicle           Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
 
   @@unique([vehicleId, date])
   @@index([vehicleId])
   @@index([date])
+  @@index([bookedByBookingId])
 }
 
 // ─── Map / District / Attraction ─────────────────────────────────────────────
