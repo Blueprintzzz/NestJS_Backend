@@ -6,8 +6,12 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  const allowedOrigins = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+    : ['https://sriway.vercel.app', 'http://localhost:3000'];
+
   app.enableCors({
-    origin: process.env.CORS_ORIGIN?.split(',') ?? 'https://sriway.vercel.app/',
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
