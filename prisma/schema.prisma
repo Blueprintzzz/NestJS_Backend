@@ -36,7 +36,7 @@ model Booking {
   payments             BookingPayment[]
   reviews              Review[]
   vehicleAvailability  VehicleAvailability[]
-  tourPackage          TourPackage        @relation(fields: [tourPackageId], references: [id], onDelete: Cascade)
+  tourPackage          TourPackage        @relation(fields: [tourPackageId], references: [id])
   vehicle              Vehicle?           @relation(fields: [vehicleId], references: [id])
 
   @@index([userId])
@@ -233,6 +233,7 @@ model District {
   featured           Boolean               @default(false)
   status             String                @default("ACTIVE")
   attractions        Attraction[]
+  experiences        Experience[]
   packageDistricts   TourPackageDistrict[]
   createdAt          DateTime              @default(now())
   updatedAt          DateTime              @updatedAt
@@ -283,6 +284,31 @@ model TourPackageDistrict {
   @@unique([tourPackageId, districtId])
   @@index([tourPackageId])
   @@index([districtId])
+}
+
+// ─── Experience ─────────────────────────────────────────────────────────────
+
+model Experience {
+  id          String             @id @default(cuid())
+  name        String
+  description String             @db.Text
+  category    ExperienceCategory
+  price       Decimal            @db.Decimal(10, 2)
+  duration    String
+  image       String?
+  images      Json               @default("[]")
+  location    String?
+  districtId  String?
+  district    District?          @relation(fields: [districtId], references: [id])
+  featured    Boolean            @default(false)
+  status      String             @default("ACTIVE")
+  rating      Decimal?           @db.Decimal(3, 2)
+  reviewCount Int?               @default(0)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([category])
+  @@index([featured])
 }
 
 // ─── Enums ───────────────────────────────────────────────────────────────────
@@ -367,4 +393,13 @@ enum VehicleType {
   VAN
   MINIBUS
   LUXURY
+}
+
+enum ExperienceCategory {
+  ADVENTURE
+  NATURE
+  CULTURAL
+  RELAXATION
+  FAMILY
+  ROMANTIC
 }

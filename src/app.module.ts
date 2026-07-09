@@ -12,6 +12,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
 import { InquiriesModule } from './modules/inquiries/inquiries.module';
 import { VehiclesModule } from './modules/vehicles/vehicles.module';
 import { DestinationsModule } from './modules/destinations/destinations.module';
+import { ExperiencesModule } from './modules/experiences/experiences.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { DestinationsModule } from './modules/destinations/destinations.module';
     InquiriesModule,
     VehiclesModule,
     DestinationsModule,
+    ExperiencesModule,
   ],
   controllers: [HealthController],
   providers: [PrismaService, DrizzleService],

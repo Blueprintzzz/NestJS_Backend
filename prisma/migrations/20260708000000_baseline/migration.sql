@@ -1,3 +1,18 @@
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
+
+-- CreateEnum
+CREATE TYPE "BookingStatus" AS ENUM ('PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED');
+
+-- CreateEnum
+CREATE TYPE "PaymentStatus" AS ENUM ('NOT_PAID', 'PARTIAL', 'PAID');
+
+-- CreateEnum
+CREATE TYPE "PaymentMethod" AS ENUM ('CARD', 'BANK_TRANSFER', 'CASH', 'ONLINE');
+
+-- CreateEnum
+CREATE TYPE "PaymentTransactionStatus" AS ENUM ('PENDING', 'SUCCESS', 'FAILED');
+
 -- CreateEnum
 CREATE TYPE "ResourceStatus" AS ENUM ('ACTIVE', 'INACTIVE');
 
@@ -22,6 +37,70 @@ CREATE TYPE "InquiryCategory" AS ENUM ('BOOKING', 'GENERAL', 'COMPLAINT', 'SUGGE
 -- CreateEnum
 CREATE TYPE "VehicleType" AS ENUM ('CAR', 'SUV', 'VAN', 'MINIBUS', 'LUXURY');
 
+-- CreateEnum
+CREATE TYPE "ExperienceCategory" AS ENUM ('ADVENTURE', 'NATURE', 'CULTURAL', 'RELAXATION', 'FAMILY', 'ROMANTIC');
+
+-- CreateTable
+CREATE TABLE "Example" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Example_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Booking" (
+    "id" TEXT NOT NULL,
+    "bookingNumber" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "tourPackageId" TEXT NOT NULL,
+    "vehicleId" TEXT,
+    "startDate" TIMESTAMP(3) NOT NULL,
+    "endDate" TIMESTAMP(3) NOT NULL,
+    "numberOfPassengers" INTEGER NOT NULL,
+    "totalCost" DECIMAL(10,2) NOT NULL,
+    "advancePayment" DECIMAL(10,2),
+    "remainingAmount" DECIMAL(10,2) NOT NULL,
+    "status" "BookingStatus" NOT NULL DEFAULT 'PENDING',
+    "paymentStatus" "PaymentStatus" NOT NULL DEFAULT 'NOT_PAID',
+    "specialRequests" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Booking_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "BookingPassenger" (
+    "id" TEXT NOT NULL,
+    "bookingId" TEXT NOT NULL,
+    "passengerName" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "phone" TEXT NOT NULL,
+    "dateOfBirth" TIMESTAMP(3) NOT NULL,
+    "passportNumber" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "BookingPassenger_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "BookingPayment" (
+    "id" TEXT NOT NULL,
+    "bookingId" TEXT NOT NULL,
+    "amount" DECIMAL(10,2) NOT NULL,
+    "paymentMethod" "PaymentMethod" NOT NULL,
+    "paymentDate" TIMESTAMP(3) NOT NULL,
+    "transactionId" TEXT,
+    "status" "PaymentTransactionStatus" NOT NULL DEFAULT 'PENDING',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "BookingPayment_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateTable
 CREATE TABLE "TourPackage" (
     "id" TEXT NOT NULL,
@@ -39,6 +118,7 @@ CREATE TABLE "TourPackage" (
     "adminId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "categoryId" TEXT,
 
     CONSTRAINT "TourPackage_pkey" PRIMARY KEY ("id")
 );
@@ -80,16 +160,6 @@ CREATE TABLE "Review" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Review_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "ReviewPhoto" (
-    "id" TEXT NOT NULL,
-    "reviewId" TEXT NOT NULL,
-    "photoUrl" TEXT NOT NULL,
-    "uploadedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "ReviewPhoto_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -203,8 +273,66 @@ CREATE TABLE "TourCategory" (
     CONSTRAINT "TourCategory_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "TourPackageDistrict" (
+    "id" TEXT NOT NULL,
+    "tourPackageId" TEXT NOT NULL,
+    "districtId" TEXT NOT NULL,
+
+    CONSTRAINT "TourPackageDistrict_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Experience" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+    "category" "ExperienceCategory" NOT NULL,
+    "price" DECIMAL(10,2) NOT NULL,
+    "duration" TEXT NOT NULL,
+    "image" TEXT,
+    "images" JSONB NOT NULL DEFAULT '[]',
+    "location" TEXT,
+    "districtId" TEXT,
+    "featured" BOOLEAN NOT NULL DEFAULT false,
+    "status" TEXT NOT NULL DEFAULT 'ACTIVE',
+    "rating" DECIMAL(3,2),
+    "reviewCount" INTEGER DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Experience_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Booking_bookingNumber_key" ON "Booking"("bookingNumber");
+
+-- CreateIndex
+CREATE INDEX "Booking_userId_idx" ON "Booking"("userId");
+
+-- CreateIndex
+CREATE INDEX "Booking_tourPackageId_idx" ON "Booking"("tourPackageId");
+
+-- CreateIndex
+CREATE INDEX "Booking_vehicleId_idx" ON "Booking"("vehicleId");
+
+-- CreateIndex
+CREATE INDEX "Booking_status_idx" ON "Booking"("status");
+
+-- CreateIndex
+CREATE INDEX "Booking_createdAt_idx" ON "Booking"("createdAt");
+
+-- CreateIndex
+CREATE INDEX "BookingPassenger_bookingId_idx" ON "BookingPassenger"("bookingId");
+
+-- CreateIndex
+CREATE INDEX "BookingPayment_bookingId_idx" ON "BookingPayment"("bookingId");
+
 -- CreateIndex
 CREATE INDEX "TourPackage_category_idx" ON "TourPackage"("category");
+
+-- CreateIndex
+CREATE INDEX "TourPackage_categoryId_idx" ON "TourPackage"("categoryId");
 
 -- CreateIndex
 CREATE INDEX "TourPackage_status_idx" ON "TourPackage"("status");
@@ -226,9 +354,6 @@ CREATE INDEX "Review_status_idx" ON "Review"("status");
 
 -- CreateIndex
 CREATE INDEX "Review_bookingId_idx" ON "Review"("bookingId");
-
--- CreateIndex
-CREATE INDEX "ReviewPhoto_reviewId_idx" ON "ReviewPhoto"("reviewId");
 
 -- CreateIndex
 CREATE INDEX "Inquiry_status_idx" ON "Inquiry"("status");
@@ -258,6 +383,9 @@ CREATE INDEX "VehicleAvailability_vehicleId_idx" ON "VehicleAvailability"("vehic
 CREATE INDEX "VehicleAvailability_date_idx" ON "VehicleAvailability"("date");
 
 -- CreateIndex
+CREATE INDEX "VehicleAvailability_bookedByBookingId_idx" ON "VehicleAvailability"("bookedByBookingId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "VehicleAvailability_vehicleId_date_key" ON "VehicleAvailability"("vehicleId", "date");
 
 -- CreateIndex
@@ -275,6 +403,36 @@ CREATE INDEX "Attraction_category_idx" ON "Attraction"("category");
 -- CreateIndex
 CREATE UNIQUE INDEX "TourCategory_name_key" ON "TourCategory"("name");
 
+-- CreateIndex
+CREATE INDEX "TourPackageDistrict_tourPackageId_idx" ON "TourPackageDistrict"("tourPackageId");
+
+-- CreateIndex
+CREATE INDEX "TourPackageDistrict_districtId_idx" ON "TourPackageDistrict"("districtId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "TourPackageDistrict_tourPackageId_districtId_key" ON "TourPackageDistrict"("tourPackageId", "districtId");
+
+-- CreateIndex
+CREATE INDEX "Experience_category_idx" ON "Experience"("category");
+
+-- CreateIndex
+CREATE INDEX "Experience_featured_idx" ON "Experience"("featured");
+
+-- AddForeignKey
+ALTER TABLE "Booking" ADD CONSTRAINT "Booking_tourPackageId_fkey" FOREIGN KEY ("tourPackageId") REFERENCES "TourPackage"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Booking" ADD CONSTRAINT "Booking_vehicleId_fkey" FOREIGN KEY ("vehicleId") REFERENCES "Vehicle"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BookingPassenger" ADD CONSTRAINT "BookingPassenger_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "Booking"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BookingPayment" ADD CONSTRAINT "BookingPayment_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "Booking"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TourPackage" ADD CONSTRAINT "TourPackage_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "TourCategory"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
 -- AddForeignKey
 ALTER TABLE "PackageItinerary" ADD CONSTRAINT "PackageItinerary_packageId_fkey" FOREIGN KEY ("packageId") REFERENCES "TourPackage"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -282,19 +440,25 @@ ALTER TABLE "PackageItinerary" ADD CONSTRAINT "PackageItinerary_packageId_fkey" 
 ALTER TABLE "PackageInclusion" ADD CONSTRAINT "PackageInclusion_packageId_fkey" FOREIGN KEY ("packageId") REFERENCES "TourPackage"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Review" ADD CONSTRAINT "Review_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "Booking"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "ReviewPhoto" ADD CONSTRAINT "ReviewPhoto_reviewId_fkey" FOREIGN KEY ("reviewId") REFERENCES "Review"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Review" ADD CONSTRAINT "Review_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "Booking"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "InquiryResponse" ADD CONSTRAINT "InquiryResponse_inquiryId_fkey" FOREIGN KEY ("inquiryId") REFERENCES "Inquiry"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "VehicleAvailability" ADD CONSTRAINT "VehicleAvailability_vehicleId_fkey" FOREIGN KEY ("vehicleId") REFERENCES "Vehicle"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "VehicleAvailability" ADD CONSTRAINT "VehicleAvailability_bookedByBookingId_fkey" FOREIGN KEY ("bookedByBookingId") REFERENCES "Booking"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "VehicleAvailability" ADD CONSTRAINT "VehicleAvailability_vehicleId_fkey" FOREIGN KEY ("vehicleId") REFERENCES "Vehicle"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Attraction" ADD CONSTRAINT "Attraction_districtId_fkey" FOREIGN KEY ("districtId") REFERENCES "District"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TourPackageDistrict" ADD CONSTRAINT "TourPackageDistrict_tourPackageId_fkey" FOREIGN KEY ("tourPackageId") REFERENCES "TourPackage"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TourPackageDistrict" ADD CONSTRAINT "TourPackageDistrict_districtId_fkey" FOREIGN KEY ("districtId") REFERENCES "District"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Experience" ADD CONSTRAINT "Experience_districtId_fkey" FOREIGN KEY ("districtId") REFERENCES "District"("id") ON DELETE SET NULL ON UPDATE CASCADE;
