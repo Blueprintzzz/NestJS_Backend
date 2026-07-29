@@ -1,9 +1,13 @@
 import {
   Body, Controller, Delete, Get, HttpCode, HttpStatus,
-  Param, Patch, Post, Query, Req,
+  Param, Patch, Post, Query, UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
-import { PackageCategory } from '@prisma/client';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { PackageCategory, UserRole } from '@prisma/client';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../auth/guards/roles.guard';
 import { AddInclusionDto, AddItineraryDto, CreateTourPackageDto } from '../dto/create-package.dto';
 import { PackageQueryDto } from '../dto/package-query.dto';
 import { UpdateTourPackageDto } from '../dto/update-package.dto';
@@ -12,13 +16,15 @@ import { PackagesService } from '../services/packages.service';
 @ApiTags('packages')
 @Controller('packages')
 export class PackagesController {
-  constructor(private readonly service: PackagesService) {}
+  constructor(private readonly service: PackagesService) { }
 
   @Post()
-  @ApiOperation({ summary: 'Create tour package (admin)' })
-  create(@Body() dto: CreateTourPackageDto, @Req() req: any) {
-    const adminId: string = req.user?.id ?? 'admin';
-    return this.service.createPackage(dto, adminId);
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.DRIVER, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Create tour package (DRIVER or ADMIN)' })
+  create(@Body() dto: CreateTourPackageDto, @CurrentUser() user: any) {
+    return this.service.createPackage(dto, user.id);
   }
 
   @Get()
@@ -49,7 +55,10 @@ export class PackagesController {
 
   @Patch(':id')
   @ApiParam({ name: 'id' })
-  @ApiOperation({ summary: 'Update package (admin)' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.DRIVER, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Update package (DRIVER owner or ADMIN)' })
   update(@Param('id') id: string, @Body() dto: UpdateTourPackageDto) {
     return this.service.updatePackage(id, dto);
   }
@@ -57,7 +66,10 @@ export class PackagesController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiParam({ name: 'id' })
-  @ApiOperation({ summary: 'Delete package (admin)' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Delete package (ADMIN only)' })
   remove(@Param('id') id: string) {
     return this.service.deletePackage(id);
   }
@@ -86,14 +98,20 @@ export class PackagesController {
 
   @Post(':id/feature')
   @ApiParam({ name: 'id' })
-  @ApiOperation({ summary: 'Mark package as featured (admin)' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Mark package as featured (ADMIN only)' })
   feature(@Param('id') id: string) {
     return this.service.markFeatured(id);
   }
 
   @Post(':id/deactivate')
   @ApiParam({ name: 'id' })
-  @ApiOperation({ summary: 'Deactivate package (admin)' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Deactivate package (ADMIN only)' })
   deactivate(@Param('id') id: string) {
     return this.service.deactivatePackage(id);
   }

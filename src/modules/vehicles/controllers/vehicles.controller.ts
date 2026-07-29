@@ -9,19 +9,26 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
-import { VehicleType } from '@prisma/client';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { UserRole, VehicleType } from '@prisma/client';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../auth/guards/roles.guard';
 import { CheckAvailabilityDto, CreateVehicleDto, UpdateVehicleDto, VehicleQueryDto } from '../dto/vehicle.dto';
 import { VehiclesService } from '../services/vehicles.service';
 
 @ApiTags('vehicles')
 @Controller('vehicles')
 export class VehiclesController {
-  constructor(private readonly vehiclesService: VehiclesService) {}
+  constructor(private readonly vehiclesService: VehiclesService) { }
 
   @Post()
-  @ApiOperation({ summary: 'Create vehicle (admin)' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.DRIVER, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Create vehicle (DRIVER or ADMIN)' })
   create(@Body() dto: CreateVehicleDto) {
     return this.vehiclesService.createVehicle(dto);
   }
@@ -82,16 +89,22 @@ export class VehiclesController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update vehicle (admin)' })
+  @ApiOperation({ summary: 'Update vehicle (DRIVER owner or ADMIN)' })
   @ApiParam({ name: 'id' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.DRIVER, UserRole.ADMIN)
   update(@Param('id') id: string, @Body() dto: UpdateVehicleDto) {
     return this.vehiclesService.updateVehicle(id, dto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete vehicle (admin)' })
+  @ApiOperation({ summary: 'Delete vehicle (ADMIN only)' })
   @ApiParam({ name: 'id' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   remove(@Param('id') id: string) {
     return this.vehiclesService.deleteVehicle(id);
   }

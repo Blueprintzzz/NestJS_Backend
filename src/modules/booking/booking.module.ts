@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { DrizzleService } from '../../drizzle/drizzle.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AuthModule } from '../auth/auth.module';
 import { BookingController } from './controllers/booking.controller';
 import { BookingCancelledListener } from './listeners/booking-cancelled.listener';
 import { BookingCreatedListener } from './listeners/booking-created.listener';
@@ -9,6 +10,7 @@ import { bookingRepositoryProvider } from './repositories/repository.provider';
 import { BookingService } from './services/booking.service';
 
 @Module({
+  imports: [forwardRef(() => AuthModule)],
   controllers: [BookingController],
   providers: [
     PrismaService,
@@ -21,4 +23,4 @@ import { BookingService } from './services/booking.service';
   ],
   exports: [BookingService],
 })
-export class BookingModule {}
+export class BookingModule { }

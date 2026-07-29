@@ -1,20 +1,28 @@
 import {
   Body, Controller, Delete, Get, HttpCode, HttpStatus,
-  Param, Patch, Post, Query, Req,
+  Param, Patch, Post, Query, UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { UserRole } from '@prisma/client';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../auth/guards/roles.guard';
 import { CreateReviewDto, ReviewQueryDto, UpdateReviewDto } from '../dto/review.dto';
 import { ReviewsService } from '../services/reviews.service';
 
 @ApiTags('reviews')
 @Controller('reviews')
 export class ReviewsController {
-  constructor(private readonly service: ReviewsService) {}
+  constructor(private readonly service: ReviewsService) { }
 
   @Post()
-  @ApiOperation({ summary: 'Create review (completed booking required)' })
-  create(@Body() dto: CreateReviewDto, @Req() req: any) {
-    return this.service.createReview(dto, req.user?.id ?? 'anonymous');
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.TOURIST)
+  @ApiOperation({ summary: 'Create review (TOURIST only — completed booking required)' })
+  create(@Body() dto: CreateReviewDto, @CurrentUser() user: any) {
+    return this.service.createReview(dto, user.id);
   }
 
   @Get()
@@ -32,29 +40,41 @@ export class ReviewsController {
 
   @Patch(':id')
   @ApiParam({ name: 'id' })
-  @ApiOperation({ summary: 'Update own review' })
-  update(@Param('id') id: string, @Body() dto: UpdateReviewDto, @Req() req: any) {
-    return this.service.updateReview(id, dto, req.user?.id ?? 'anonymous');
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.TOURIST)
+  @ApiOperation({ summary: 'Update own review (TOURIST only)' })
+  update(@Param('id') id: string, @Body() dto: UpdateReviewDto, @CurrentUser() user: any) {
+    return this.service.updateReview(id, dto, user.id);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiParam({ name: 'id' })
-  @ApiOperation({ summary: 'Delete own review' })
-  remove(@Param('id') id: string, @Req() req: any) {
-    return this.service.deleteReview(id, req.user?.id ?? 'anonymous');
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Delete review (ADMIN only)' })
+  remove(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.service.deleteReview(id, user.id);
   }
 
   @Post(':id/approve')
   @ApiParam({ name: 'id' })
-  @ApiOperation({ summary: 'Approve review (admin)' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Approve review (ADMIN only)' })
   approve(@Param('id') id: string) {
     return this.service.approveReview(id);
   }
 
   @Post(':id/reject')
   @ApiParam({ name: 'id' })
-  @ApiOperation({ summary: 'Reject review (admin)' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Reject review (ADMIN only)' })
   reject(@Param('id') id: string) {
     return this.service.rejectReview(id);
   }

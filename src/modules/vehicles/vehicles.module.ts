@@ -1,12 +1,14 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { DrizzleService } from '../../drizzle/drizzle.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AuthModule } from '../auth/auth.module';
 import { VehiclesController } from './controllers/vehicles.controller';
 import { VehicleReleasedListener, VehicleReservedListener } from './listeners/vehicle.listeners';
 import { vehicleRepositoryProvider } from './repositories/repository.provider';
 import { VehiclesService } from './services/vehicles.service';
 
 @Module({
+  imports: [forwardRef(() => AuthModule)],
   controllers: [VehiclesController],
   providers: [
     PrismaService,
@@ -18,4 +20,4 @@ import { VehiclesService } from './services/vehicles.service';
   ],
   exports: [VehiclesService],
 })
-export class VehiclesModule {}
+export class VehiclesModule { }

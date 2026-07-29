@@ -5,6 +5,8 @@ import appConfig from './config/app.config';
 import { PrismaService } from './prisma/prisma.service';
 import { DrizzleService } from './drizzle/drizzle.service';
 import { HealthController } from './health.controller';
+import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
 import { ExampleModule } from './modules/example/example.module';
 import { BookingModule } from './modules/booking/booking.module';
 import { PackagesModule } from './modules/packages/packages.module';
@@ -13,6 +15,7 @@ import { InquiriesModule } from './modules/inquiries/inquiries.module';
 import { VehiclesModule } from './modules/vehicles/vehicles.module';
 import { DestinationsModule } from './modules/destinations/destinations.module';
 import { ExperiencesModule } from './modules/experiences/experiences.module';
+import { CustomBookingsModule } from './modules/custom-bookings/custom-bookings.module';
 
 @Module({
   imports: [
@@ -24,6 +27,8 @@ import { ExperiencesModule } from './modules/experiences/experiences.module';
       wildcard: false,
       delimiter: '.',
     }),
+    AuthModule,
+    UsersModule,
     ExampleModule,
     BookingModule,
     PackagesModule,
@@ -32,9 +37,10 @@ import { ExperiencesModule } from './modules/experiences/experiences.module';
     VehiclesModule,
     DestinationsModule,
     ExperiencesModule,
+    CustomBookingsModule,
   ],
   controllers: [HealthController],
   providers: [PrismaService, DrizzleService],
   exports: [PrismaService, DrizzleService],
 })
-export class AppModule {}
+export class AppModule { }

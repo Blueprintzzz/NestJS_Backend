@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { DrizzleService } from '../../drizzle/drizzle.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AuthModule } from '../auth/auth.module';
 import { AttractionsController } from './controllers/attractions.controller';
 import { CategoriesController } from './controllers/categories.controller';
 import { DistrictsController } from './controllers/districts.controller';
@@ -12,6 +13,7 @@ import { CategoriesService } from './services/categories.service';
 import { DistrictsService } from './services/districts.service';
 
 @Module({
+  imports: [forwardRef(() => AuthModule)],
   controllers: [DistrictsController, AttractionsController, CategoriesController, MapController],
   providers: [
     PrismaService,
@@ -26,4 +28,4 @@ import { DistrictsService } from './services/districts.service';
   ],
   exports: [DistrictsService, AttractionsService, CategoriesService],
 })
-export class DestinationsModule {}
+export class DestinationsModule { }

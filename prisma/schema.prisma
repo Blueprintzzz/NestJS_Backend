@@ -15,6 +15,55 @@ model Example {
   updatedAt   DateTime @updatedAt
 }
 
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String
+  firstName     String
+  lastName      String
+  phone         String?
+  role          UserRole       @default(TOURIST)
+  status        UserStatus     @default(ACTIVE)
+  avatar        String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  driverProfile DriverProfile?
+  refreshTokens RefreshToken[]
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+}
+
+model DriverProfile {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  licenseNumber String   @unique
+  licenseExpiry DateTime
+  experience    Int      @default(0)
+  bio           String?  @db.Text
+  rating        Decimal? @db.Decimal(3, 2)
+  totalTrips    Int      @default(0)
+  isVerified    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
 model Booking {
   id                 String             @id @default(uuid())
   bookingNumber      String             @unique
@@ -402,4 +451,63 @@ enum ExperienceCategory {
   RELAXATION
   FAMILY
   ROMANTIC
+}
+
+enum UserRole {
+  TOURIST
+  DRIVER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+// ─── Custom Booking ──────────────────────────────────────────────────────────
+
+enum CustomBookingStatus {
+  PENDING
+  OFFER_RECEIVED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model CustomBooking {
+  id               String              @id @default(uuid())
+  userId           String
+  title            String
+  description      String              @db.Text
+  startDate        DateTime
+  endDate          DateTime
+  numberOfPeople   Int
+  budget           Decimal?            @db.Decimal(10, 2)
+  destinations     Json                @default("[]")
+  requirements     String?             @db.Text
+  status           CustomBookingStatus @default(PENDING)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  offers           CustomBookingOffer[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model CustomBookingOffer {
+  id              String        @id @default(uuid())
+  customBookingId String
+  driverId        String
+  price           Decimal       @db.Decimal(10, 2)
+  description     String        @db.Text
+  validUntil      DateTime
+  isAccepted      Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  customBooking   CustomBooking @relation(fields: [customBookingId], references: [id], onDelete: Cascade)
+
+  @@index([customBookingId])
+  @@index([driverId])
 }

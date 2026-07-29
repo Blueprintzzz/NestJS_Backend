@@ -1,3 +1,3 @@
-// This file is intentionally empty.
-// JWT auth guard has been removed from the skeleton.
-// Add your own guards here when implementing authentication.
+// Re-exports the actual JWT auth guard from the auth module.
+// Import JwtAuthGuard from here or directly from src/modules/auth/guards/jwt-auth.guard.
+export { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
