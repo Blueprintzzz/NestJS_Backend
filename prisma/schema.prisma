@@ -205,15 +205,12 @@ model TourPackage {
   adminId          String
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
-  categoryId       String?
-  tourCategory     TourCategory?         @relation(fields: [categoryId], references: [id])
+  destinationId    String?
   itineraries      PackageItinerary[]
   inclusions       PackageInclusion[]
   bookings         Booking[]
-  packageDistricts TourPackageDistrict[]
 
   @@index([category])
-  @@index([categoryId])
   @@index([status])
 }
 
@@ -295,71 +292,32 @@ model InquiryResponse {
   @@index([inquiryId])
 }
 
-// ─── Map / District / Attraction ─────────────────────────────────────────────
+// ─── Destination ─────────────────────────────────────────────────────────────
 
-model District {
-  id                 String                @id @default(cuid())
-  name               String                @unique
-  description        String                @db.Text
-  weatherInfo        Json
-  bestVisitingSeason String?
-  latitude           Decimal               @db.Decimal(10, 8)
-  longitude          Decimal               @db.Decimal(11, 8)
-  coverImage         String?
-  featured           Boolean               @default(false)
-  status             String                @default("ACTIVE")
-  attractions        Attraction[]
-  experiences        Experience[]
-  packageDistricts   TourPackageDistrict[]
-  createdAt          DateTime              @default(now())
-  updatedAt          DateTime              @updatedAt
-
-  @@index([featured])
-}
-
-model Attraction {
-  id                    String   @id @default(cuid())
-  districtId            String
-  district              District @relation(fields: [districtId], references: [id], onDelete: Cascade)
-  name                  String
-  description           String   @db.Text
-  category              String
-  images                Json     @default("[]")
-  travelTips            String   @db.Text
-  estimatedVisitingTime String
-  latitude              Decimal  @db.Decimal(10, 8)
-  longitude             Decimal  @db.Decimal(11, 8)
+model Destination {
+  id                    String              @id @default(cuid())
+  name                  String              @unique
+  description           String              @db.Text
+  category              DestinationCategory
+  images                Json                @default("[]")
+  coverImage            String?
+  latitude              Decimal             @db.Decimal(10, 8)
+  longitude             Decimal             @db.Decimal(11, 8)
+  weatherInfo           Json?
+  bestVisitingSeason    String?
+  travelTips            String?             @db.Text
+  estimatedVisitingTime String?
   openingHours          String?
-  entryFee              Decimal  @db.Decimal(10, 2)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  entryFee              Decimal?            @db.Decimal(10, 2)
+  featured              Boolean             @default(false)
+  status                String              @default("ACTIVE")
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  experiences           Experience[]
 
-  @@index([districtId])
   @@index([category])
-}
-
-model TourCategory {
-  id          String        @id @default(cuid())
-  name        String        @unique
-  description String        @db.Text
-  icon        String?
-  color       String?
-  featured    Boolean       @default(false)
-  packages    TourPackage[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-}
-
-model TourPackageDistrict {
-  id            String      @id @default(uuid())
-  tourPackageId String
-  districtId    String
-  tourPackage   TourPackage @relation(fields: [tourPackageId], references: [id], onDelete: Cascade)
-  district      District    @relation(fields: [districtId], references: [id], onDelete: Cascade)
-
-  @@unique([tourPackageId, districtId])
-  @@index([tourPackageId])
-  @@index([districtId])
+  @@index([featured])
+  @@index([status])
 }
 
 // ─── Experience ─────────────────────────────────────────────────────────────
@@ -373,10 +331,10 @@ model Experience {
   duration    String
   image       String?
   images      Json               @default("[]")
-  location    String?
-  districtId  String?
-  district    District?          @relation(fields: [districtId], references: [id])
-  featured    Boolean            @default(false)
+  location      String?
+  destinationId String?
+  destination   Destination?       @relation(fields: [destinationId], references: [id])
+  featured      Boolean            @default(false)
   status      String             @default("ACTIVE")
   rating      Decimal?           @db.Decimal(3, 2)
   reviewCount Int?               @default(0)
@@ -441,6 +399,17 @@ model DriverOffer {
 }
 
 // ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum DestinationCategory {
+  TEMPLE
+  BEACH
+  MOUNTAIN
+  WATERFALL
+  HISTORIC
+  WILDLIFE
+  CITY
+  NATURE
+}
 
 enum BookingStatus {
   PENDING

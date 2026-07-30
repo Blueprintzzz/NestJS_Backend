@@ -2,30 +2,22 @@ import { forwardRef, Module } from '@nestjs/common';
 import { DrizzleService } from '../../drizzle/drizzle.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthModule } from '../auth/auth.module';
-import { AttractionsController } from './controllers/attractions.controller';
-import { CategoriesController } from './controllers/categories.controller';
-import { DistrictsController } from './controllers/districts.controller';
+import { DestinationsController } from './controllers/destinations.controller';
 import { MapController } from './controllers/map.controller';
 import { DestinationListener } from './listeners/destination.listeners';
-import { attractionRepositoryProvider, categoryRepositoryProvider, districtRepositoryProvider } from './repositories/repository.provider';
-import { AttractionsService } from './services/attractions.service';
-import { CategoriesService } from './services/categories.service';
-import { DistrictsService } from './services/districts.service';
+import { destinationRepositoryProvider } from './repositories/repository.provider';
+import { DestinationsService } from './services/destinations.service';
 
 @Module({
   imports: [forwardRef(() => AuthModule)],
-  controllers: [DistrictsController, AttractionsController, CategoriesController, MapController],
+  controllers: [DestinationsController, MapController],
   providers: [
     PrismaService,
     DrizzleService,
-    districtRepositoryProvider,
-    attractionRepositoryProvider,
-    categoryRepositoryProvider,
-    DistrictsService,
-    AttractionsService,
-    CategoriesService,
+    destinationRepositoryProvider,
+    DestinationsService,
     DestinationListener,
   ],
-  exports: [DistrictsService, AttractionsService, CategoriesService],
+  exports: [DestinationsService],
 })
-export class DestinationsModule { }
+export class DestinationsModule {}

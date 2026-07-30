@@ -1,16 +1,20 @@
-export class AttractionEntity {
+export class DestinationEntity {
   id: string;
-  districtId: string;
   name: string;
   description: string;
   category: string;
   images: string[];
-  travelTips: string;
-  estimatedVisitingTime: string;
+  coverImage?: string | null;
   latitude: number;
   longitude: number;
+  weatherInfo?: any;
+  bestVisitingSeason?: string | null;
+  travelTips?: string | null;
+  estimatedVisitingTime?: string | null;
   openingHours?: string | null;
   entryFee?: number | null;
+  featured: boolean;
+  status: string;
   createdAt: Date;
   updatedAt: Date;
 }

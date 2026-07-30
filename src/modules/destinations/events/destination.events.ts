@@ -1,18 +1,9 @@
-import { AttractionEntity } from '../entities/attraction.entity';
-import { DistrictEntity } from '../entities/district.entity';
+import { DestinationEntity } from '../entities/destination.entity';
 
-export class DistrictCreatedEvent {
-  constructor(public readonly district: DistrictEntity) {}
+export class DestinationCreatedEvent {
+  constructor(public readonly destination: DestinationEntity) {}
 }
 
-export class DistrictUpdatedEvent {
-  constructor(public readonly district: DistrictEntity) {}
-}
-
-export class AttractionCreatedEvent {
-  constructor(public readonly attraction: AttractionEntity) {}
-}
-
-export class AttractionUpdatedEvent {
-  constructor(public readonly attraction: AttractionEntity) {}
+export class DestinationUpdatedEvent {
+  constructor(public readonly destination: DestinationEntity) {}
 }
