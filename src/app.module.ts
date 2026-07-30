@@ -13,6 +13,7 @@ import { PackagesModule } from './modules/packages/packages.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { InquiriesModule } from './modules/inquiries/inquiries.module';
 import { VehiclesModule } from './modules/vehicles/vehicles.module';
+import { VehicleModelsModule } from './modules/vehicle-models/vehicle-models.module';
 import { DestinationsModule } from './modules/destinations/destinations.module';
 import { ExperiencesModule } from './modules/experiences/experiences.module';
 import { CustomBookingsModule } from './modules/custom-bookings/custom-bookings.module';
@@ -35,6 +36,7 @@ import { CustomBookingsModule } from './modules/custom-bookings/custom-bookings.
     ReviewsModule,
     InquiriesModule,
     VehiclesModule,
+    VehicleModelsModule,
     DestinationsModule,
     ExperiencesModule,
     CustomBookingsModule,

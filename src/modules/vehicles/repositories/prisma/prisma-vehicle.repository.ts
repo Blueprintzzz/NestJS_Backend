@@ -1,7 +1,11 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { ResourceStatus, VehicleType } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
-import { CheckAvailabilityDto, CreateVehicleDto, UpdateVehicleDto, VehicleQueryDto } from '../../dto/vehicle.dto';
+import {
+  CreateVehicleDto,
+  UpdateVehicleDto,
+  VehicleQueryDto,
+} from '../../dto/vehicle.dto';
 import { VehicleAvailabilityEntity, VehicleEntity } from '../../entities/vehicle.entity';
 import { IVehicleRepository, Pagination } from '../interfaces/vehicle.repository.interface';
 
@@ -11,10 +15,20 @@ function toNum(v: any): number {
 
 function mapVehicle(raw: any): VehicleEntity {
   return {
-    ...raw,
+    id: raw.id,
+    driverId: raw.driverId,
+    vehicleModelId: raw.vehicleModelId,
+    vehicleModelName: raw.vehicleModel?.name,
+    type: raw.type,
+    capacity: raw.capacity,
     pricePerDay: toNum(raw.pricePerDay),
     images: Array.isArray(raw.images) ? raw.images : [],
     features: Array.isArray(raw.features) ? raw.features : [],
+    status: raw.status,
+    description: raw.description,
+    registrationNumber: raw.registrationNumber,
+    createdAt: raw.createdAt,
+    updatedAt: raw.updatedAt,
     availability: raw.availability ?? [],
   };
 }
@@ -29,17 +43,42 @@ function dateRange(start: Date, end: Date): Date[] {
   return dates;
 }
 
+const VEHICLE_INCLUDE = {
+  vehicleModel: { select: { name: true } },
+  availability: false as const,
+};
+
 @Injectable()
 export class PrismaVehicleRepository implements IVehicleRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
-  async create(dto: CreateVehicleDto): Promise<VehicleEntity> {
-    const v = await this.prisma.vehicle.create({ data: dto as any, include: { availability: false } });
+  async create(dto: CreateVehicleDto, driverId: string): Promise<VehicleEntity> {
+    const { driverId: _bodyDriverId, vehicleModelId, type, capacity, pricePerDay, images, features, description, registrationNumber } = dto;
+    const v = await this.prisma.vehicle.create({
+      data: {
+        driverId,
+        vehicleModelId,
+        type,
+        capacity,
+        pricePerDay,
+        images: images ?? [],
+        features: features ?? [],
+        description,
+        registrationNumber,
+      },
+      include: VEHICLE_INCLUDE,
+    });
     return mapVehicle(v);
   }
 
   async findById(id: string): Promise<VehicleEntity | null> {
-    const v = await this.prisma.vehicle.findUnique({ where: { id }, include: { availability: { take: 30, orderBy: { date: 'asc' } } } });
+    const v = await this.prisma.vehicle.findUnique({
+      where: { id },
+      include: {
+        vehicleModel: { select: { name: true } },
+        availability: { take: 30, orderBy: { date: 'asc' } },
+      },
+    });
     return v ? mapVehicle(v) : null;
   }
 
@@ -51,9 +90,21 @@ export class PrismaVehicleRepository implements IVehicleRepository {
     return this.paginate({ ...this.buildWhere(query), type }, query);
   }
 
+  async findByDriverId(driverId: string): Promise<VehicleEntity[]> {
+    const rows = await this.prisma.vehicle.findMany({
+      where: { driverId },
+      include: VEHICLE_INCLUDE,
+      orderBy: { createdAt: 'desc' },
+    });
+    return rows.map(mapVehicle);
+  }
+
   async update(id: string, dto: UpdateVehicleDto): Promise<VehicleEntity> {
-    const { id: _id, availability, createdAt, updatedAt, ...data } = dto as any;
-    const v = await this.prisma.vehicle.update({ where: { id }, data, include: { availability: false } });
+    const v = await this.prisma.vehicle.update({
+      where: { id },
+      data: dto as any,
+      include: VEHICLE_INCLUDE,
+    });
     return mapVehicle(v);
   }
 
@@ -62,24 +113,38 @@ export class PrismaVehicleRepository implements IVehicleRepository {
     return true;
   }
 
-  async getAvailableVehicles(startDate: Date, endDate: Date, type?: VehicleType, minCapacity?: number): Promise<VehicleEntity[]> {
+  async getAvailableVehicles(
+    startDate: Date,
+    endDate: Date,
+    type?: VehicleType,
+    minCapacity?: number,
+    modelId?: string,
+  ): Promise<VehicleEntity[]> {
     const bookedIds = await this.prisma.vehicleAvailability.findMany({
       where: { date: { gte: startDate, lte: endDate }, isAvailable: false },
       select: { vehicleId: true },
     });
     const unavailableIds = [...new Set(bookedIds.map((b) => b.vehicleId))];
-    const where: any = { status: ResourceStatus.ACTIVE, id: { notIn: unavailableIds } };
+    const where: any = {
+      status: ResourceStatus.ACTIVE,
+      id: { notIn: unavailableIds },
+    };
     if (type) where.type = type;
     if (minCapacity) where.capacity = { gte: minCapacity };
-    const rows = await this.prisma.vehicle.findMany({ where });
+    if (modelId) where.vehicleModelId = modelId;
+    const rows = await this.prisma.vehicle.findMany({ where, include: VEHICLE_INCLUDE });
     return rows.map(mapVehicle);
   }
 
   async reserveVehicle(vehicleId: string, bookingId: string, startDate: Date, endDate: Date): Promise<void> {
     const dates = dateRange(startDate, endDate);
     for (const date of dates) {
-      const existing = await this.prisma.vehicleAvailability.findUnique({ where: { vehicleId_date: { vehicleId, date } } });
-      if (existing && !existing.isAvailable) throw new ConflictException(`Vehicle unavailable on ${date.toDateString()}`);
+      const existing = await this.prisma.vehicleAvailability.findUnique({
+        where: { vehicleId_date: { vehicleId, date } },
+      });
+      if (existing && !existing.isAvailable) {
+        throw new ConflictException(`Vehicle unavailable on ${date.toDateString()}`);
+      }
     }
     await this.prisma.$transaction(
       dates.map((date) =>
@@ -112,6 +177,8 @@ export class PrismaVehicleRepository implements IVehicleRepository {
   private buildWhere(query: VehicleQueryDto): any {
     const where: any = { status: ResourceStatus.ACTIVE };
     if (query.type) where.type = query.type;
+    if (query.vehicleModelId) where.vehicleModelId = query.vehicleModelId;
+    if (query.driverId) where.driverId = query.driverId;
     if (query.minCapacity) where.capacity = { gte: query.minCapacity };
     if (query.maxPrice) where.pricePerDay = { lte: query.maxPrice };
     return where;
@@ -121,8 +188,20 @@ export class PrismaVehicleRepository implements IVehicleRepository {
     const skip = (query.page - 1) * query.limit;
     const [total, rows] = await Promise.all([
       this.prisma.vehicle.count({ where }),
-      this.prisma.vehicle.findMany({ where, skip, take: query.limit, orderBy: { createdAt: 'desc' } }),
+      this.prisma.vehicle.findMany({
+        where,
+        skip,
+        take: query.limit,
+        orderBy: { createdAt: 'desc' },
+        include: VEHICLE_INCLUDE,
+      }),
     ]);
-    return { data: rows.map(mapVehicle), total, page: query.page, limit: query.limit, pages: Math.ceil(total / query.limit) };
+    return {
+      data: rows.map(mapVehicle),
+      total,
+      page: query.page,
+      limit: query.limit,
+      pages: Math.ceil(total / query.limit),
+    };
   }
 }

@@ -1,12 +1,18 @@
 import {
   ConflictException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { VehicleType } from '@prisma/client';
-import { CheckAvailabilityDto, CreateVehicleDto, UpdateVehicleDto, VehicleQueryDto } from '../dto/vehicle.dto';
+import {
+  CheckAvailabilityDto,
+  CreateVehicleDto,
+  UpdateVehicleDto,
+  VehicleQueryDto,
+} from '../dto/vehicle.dto';
 import { VehicleEntity } from '../entities/vehicle.entity';
 import { VehicleReleasedEvent, VehicleReservedEvent } from '../events/vehicle.events';
 import { IVehicleRepository, Pagination } from '../repositories/interfaces/vehicle.repository.interface';
@@ -18,10 +24,12 @@ export class VehiclesService {
     @Inject(VEHICLE_REPOSITORY)
     private readonly repo: IVehicleRepository,
     private readonly eventEmitter: EventEmitter2,
-  ) {}
+  ) { }
 
-  async createVehicle(dto: CreateVehicleDto): Promise<VehicleEntity> {
-    return this.repo.create(dto);
+  async createVehicle(dto: CreateVehicleDto, callerId: string, callerRole: string): Promise<VehicleEntity> {
+    // DRIVER always owns the vehicle; ADMIN may specify a driverId in the body
+    const driverId = callerRole === 'ADMIN' && dto.driverId ? dto.driverId : callerId;
+    return this.repo.create(dto, driverId);
   }
 
   async getAllVehicles(query: VehicleQueryDto): Promise<Pagination<VehicleEntity>> {
@@ -32,6 +40,17 @@ export class VehiclesService {
     const vehicle = await this.repo.findById(id);
     if (!vehicle) throw new NotFoundException(`Vehicle ${id} not found`);
     return vehicle;
+  }
+
+  async getVehiclesByDriverId(driverId: string, callerId: string, callerRole: string): Promise<VehicleEntity[]> {
+    if (callerRole === 'DRIVER' && callerId !== driverId) {
+      throw new ForbiddenException('Drivers can only view their own vehicles');
+    }
+    return this.repo.findByDriverId(driverId);
+  }
+
+  async getMyVehicles(driverId: string): Promise<VehicleEntity[]> {
+    return this.repo.findByDriverId(driverId);
   }
 
   async updateVehicle(id: string, dto: UpdateVehicleDto): Promise<VehicleEntity> {
@@ -57,7 +76,12 @@ export class VehiclesService {
     return this.repo.getAvailabilityCalendar(id, 30);
   }
 
-  async reserveVehicle(vehicleId: string, bookingId: string, startDate: string, endDate: string): Promise<void> {
+  async reserveVehicle(
+    vehicleId: string,
+    bookingId: string,
+    startDate: string,
+    endDate: string,
+  ): Promise<void> {
     await this.getVehicleById(vehicleId);
     await this.repo.reserveVehicle(vehicleId, bookingId, new Date(startDate), new Date(endDate));
     this.eventEmitter.emit('vehicle.reserved', new VehicleReservedEvent(vehicleId, bookingId));
@@ -76,5 +100,15 @@ export class VehiclesService {
     return all
       .filter((v) => v.capacity >= numberOfTravelers && v.pricePerDay <= maxPrice)
       .slice(0, 5);
+  }
+
+  // Called by CustomBookingService — returns available vehicles matching type/model
+  async getAvailableForCustomBooking(
+    startDate: Date,
+    endDate: Date,
+    type: VehicleType,
+    modelId?: string,
+  ): Promise<VehicleEntity[]> {
+    return this.repo.getAvailableVehicles(startDate, endDate, type, undefined, modelId);
   }
 }

@@ -1,19 +1,24 @@
-import { CustomBookingStatus } from '@prisma/client';
+import { CustomBookingStatus, OfferStatus, VehicleType } from '@prisma/client';
 
-export class CustomBookingOfferEntity {
+export class DriverOfferEntity {
     id: string;
     customBookingId: string;
     driverId: string;
+    driverName?: string;
+    vehicleId: string;
+    vehicleInfo?: string;
     price: number;
-    description: string;
+    message?: string | null;
+    eta?: string | null;
+    status: OfferStatus;
     validUntil: Date;
-    isAccepted: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
 
 export class CustomBookingEntity {
     id: string;
+    bookingNumber: string;
     userId: string;
     title: string;
     description: string;
@@ -21,10 +26,15 @@ export class CustomBookingEntity {
     endDate: Date;
     numberOfPeople: number;
     budget?: number | null;
+    pickupLocation: string;
+    dropoffLocation: string;
+    requestedVehicleType: VehicleType;
+    requestedModelId?: string | null;
     destinations: string[];
     requirements?: string | null;
     status: CustomBookingStatus;
+    selectedOfferId?: string | null;
     createdAt: Date;
     updatedAt: Date;
-    offers?: CustomBookingOfferEntity[];
+    offers?: DriverOfferEntity[];
 }

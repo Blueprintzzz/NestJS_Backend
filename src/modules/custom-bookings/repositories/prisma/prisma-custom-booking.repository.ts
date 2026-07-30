@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { CustomBookingStatus } from '@prisma/client';
+import { CustomBookingStatus, OfferStatus } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
 import {
     CreateCustomBookingDto,
-    CreateCustomBookingOfferDto,
+    CreateDriverOfferDto,
     CustomBookingQueryDto,
 } from '../../dto/custom-booking.dto';
 import {
     CustomBookingEntity,
-    CustomBookingOfferEntity,
+    DriverOfferEntity,
 } from '../../entities/custom-booking.entity';
 import {
     ICustomBookingRepository,
@@ -20,15 +20,19 @@ function toNumber(val: any): number | null {
     return typeof val === 'object' ? parseFloat(val.toString()) : Number(val);
 }
 
-function mapOffer(raw: any): CustomBookingOfferEntity {
+function mapOffer(raw: any): DriverOfferEntity {
     return {
         id: raw.id,
         customBookingId: raw.customBookingId,
         driverId: raw.driverId,
+        driverName: raw.driver ? `${raw.driver.firstName} ${raw.driver.lastName}` : undefined,
+        vehicleId: raw.vehicleId,
+        vehicleInfo: raw.vehicle ? `${raw.vehicle.vehicleModel?.name ?? ''} ${raw.vehicle.registrationNumber}`.trim() : undefined,
         price: toNumber(raw.price) as number,
-        description: raw.description,
+        message: raw.message,
+        eta: raw.eta,
+        status: raw.status,
         validUntil: raw.validUntil,
-        isAccepted: raw.isAccepted,
         createdAt: raw.createdAt,
         updatedAt: raw.updatedAt,
     };
@@ -37,6 +41,7 @@ function mapOffer(raw: any): CustomBookingOfferEntity {
 function mapBooking(raw: any): CustomBookingEntity {
     return {
         id: raw.id,
+        bookingNumber: raw.bookingNumber,
         userId: raw.userId,
         title: raw.title,
         description: raw.description,
@@ -44,22 +49,37 @@ function mapBooking(raw: any): CustomBookingEntity {
         endDate: raw.endDate,
         numberOfPeople: raw.numberOfPeople,
         budget: toNumber(raw.budget),
+        pickupLocation: raw.pickupLocation,
+        dropoffLocation: raw.dropoffLocation,
+        requestedVehicleType: raw.requestedVehicleType,
+        requestedModelId: raw.requestedModelId,
         destinations: Array.isArray(raw.destinations) ? raw.destinations : [],
         requirements: raw.requirements,
         status: raw.status,
+        selectedOfferId: raw.selectedOfferId,
         createdAt: raw.createdAt,
         updatedAt: raw.updatedAt,
         offers: raw.offers ? raw.offers.map(mapOffer) : undefined,
     };
 }
 
+const OFFER_INCLUDE = {
+    driver: { select: { firstName: true, lastName: true } },
+    vehicle: { select: { registrationNumber: true, vehicleModel: { select: { name: true } } } },
+};
+
 @Injectable()
 export class PrismaCustomBookingRepository implements ICustomBookingRepository {
     constructor(private readonly prisma: PrismaService) { }
 
-    async create(dto: CreateCustomBookingDto, userId: string): Promise<CustomBookingEntity> {
+    async create(
+        dto: CreateCustomBookingDto,
+        userId: string,
+        bookingNumber: string,
+    ): Promise<CustomBookingEntity> {
         const booking = await this.prisma.customBooking.create({
             data: {
+                bookingNumber,
                 userId,
                 title: dto.title,
                 description: dto.description,
@@ -67,10 +87,14 @@ export class PrismaCustomBookingRepository implements ICustomBookingRepository {
                 endDate: new Date(dto.endDate),
                 numberOfPeople: dto.numberOfPeople,
                 budget: dto.budget,
+                pickupLocation: dto.pickupLocation,
+                dropoffLocation: dto.dropoffLocation,
+                requestedVehicleType: dto.requestedVehicleType,
+                requestedModelId: dto.requestedModelId,
                 destinations: dto.destinations ?? [],
                 requirements: dto.requirements,
             },
-            include: { offers: true },
+            include: { offers: { include: OFFER_INCLUDE } },
         });
         return mapBooking(booking);
     }
@@ -78,7 +102,7 @@ export class PrismaCustomBookingRepository implements ICustomBookingRepository {
     async findById(id: string): Promise<CustomBookingEntity | null> {
         const booking = await this.prisma.customBooking.findUnique({
             where: { id },
-            include: { offers: true },
+            include: { offers: { include: OFFER_INCLUDE } },
         });
         return booking ? mapBooking(booking) : null;
     }
@@ -102,7 +126,16 @@ export class PrismaCustomBookingRepository implements ICustomBookingRepository {
         const booking = await this.prisma.customBooking.update({
             where: { id },
             data: { status },
-            include: { offers: true },
+            include: { offers: { include: OFFER_INCLUDE } },
+        });
+        return mapBooking(booking);
+    }
+
+    async setSelectedOffer(id: string, offerId: string): Promise<CustomBookingEntity> {
+        const booking = await this.prisma.customBooking.update({
+            where: { id },
+            data: { selectedOfferId: offerId, status: CustomBookingStatus.CONFIRMED },
+            include: { offers: { include: OFFER_INCLUDE } },
         });
         return mapBooking(booking);
     }
@@ -115,54 +148,79 @@ export class PrismaCustomBookingRepository implements ICustomBookingRepository {
     async createOffer(
         customBookingId: string,
         driverId: string,
-        dto: CreateCustomBookingOfferDto,
-    ): Promise<CustomBookingOfferEntity> {
-        const offer = await this.prisma.customBookingOffer.create({
+        dto: CreateDriverOfferDto,
+    ): Promise<DriverOfferEntity> {
+        const offer = await this.prisma.driverOffer.create({
             data: {
                 customBookingId,
                 driverId,
+                vehicleId: dto.vehicleId,
                 price: dto.price,
-                description: dto.description,
+                message: dto.message,
+                eta: dto.eta,
                 validUntil: new Date(dto.validUntil),
             },
+            include: OFFER_INCLUDE,
         });
         return mapOffer(offer);
     }
 
-    async findOffersByBookingId(customBookingId: string): Promise<CustomBookingOfferEntity[]> {
-        const offers = await this.prisma.customBookingOffer.findMany({
+    async findOffersByBookingId(customBookingId: string): Promise<DriverOfferEntity[]> {
+        const offers = await this.prisma.driverOffer.findMany({
             where: { customBookingId },
             orderBy: { createdAt: 'asc' },
+            include: OFFER_INCLUDE,
         });
         return offers.map(mapOffer);
     }
 
-    async findOfferById(offerId: string): Promise<CustomBookingOfferEntity | null> {
-        const offer = await this.prisma.customBookingOffer.findUnique({ where: { id: offerId } });
-        return offer ? mapOffer(offer) : null;
-    }
-
-    async findAcceptedOfferByBookingId(customBookingId: string): Promise<CustomBookingOfferEntity | null> {
-        const offer = await this.prisma.customBookingOffer.findFirst({
-            where: { customBookingId, isAccepted: true },
-        });
-        return offer ? mapOffer(offer) : null;
-    }
-
-    async acceptOffer(offerId: string): Promise<CustomBookingOfferEntity> {
-        const offer = await this.prisma.customBookingOffer.update({
+    async findOfferById(offerId: string): Promise<DriverOfferEntity | null> {
+        const offer = await this.prisma.driverOffer.findUnique({
             where: { id: offerId },
-            data: { isAccepted: true },
+            include: OFFER_INCLUDE,
         });
-        // Update parent booking status to CONFIRMED when an offer is accepted
-        await this.prisma.customBooking.update({
-            where: { id: offer.customBookingId },
-            data: { status: CustomBookingStatus.CONFIRMED },
+        return offer ? mapOffer(offer) : null;
+    }
+
+    async findOfferByDriverAndBooking(
+        driverId: string,
+        customBookingId: string,
+    ): Promise<DriverOfferEntity | null> {
+        const offer = await this.prisma.driverOffer.findFirst({
+            where: { driverId, customBookingId },
+            include: OFFER_INCLUDE,
+        });
+        return offer ? mapOffer(offer) : null;
+    }
+
+    async findAcceptedOfferByBookingId(customBookingId: string): Promise<DriverOfferEntity | null> {
+        const offer = await this.prisma.driverOffer.findFirst({
+            where: { customBookingId, status: OfferStatus.ACCEPTED },
+            include: OFFER_INCLUDE,
+        });
+        return offer ? mapOffer(offer) : null;
+    }
+
+    async updateOfferStatus(offerId: string, status: OfferStatus): Promise<DriverOfferEntity> {
+        const offer = await this.prisma.driverOffer.update({
+            where: { id: offerId },
+            data: { status },
+            include: OFFER_INCLUDE,
         });
         return mapOffer(offer);
     }
 
-    private async paginate(where: any, query: CustomBookingQueryDto): Promise<Pagination<CustomBookingEntity>> {
+    async rejectAllOtherOffers(customBookingId: string, acceptedOfferId: string): Promise<void> {
+        await this.prisma.driverOffer.updateMany({
+            where: { customBookingId, id: { not: acceptedOfferId }, status: OfferStatus.PENDING },
+            data: { status: OfferStatus.REJECTED },
+        });
+    }
+
+    private async paginate(
+        where: any,
+        query: CustomBookingQueryDto,
+    ): Promise<Pagination<CustomBookingEntity>> {
         const skip = (query.page - 1) * query.limit;
         const [total, rows] = await Promise.all([
             this.prisma.customBooking.count({ where }),
@@ -171,7 +229,7 @@ export class PrismaCustomBookingRepository implements ICustomBookingRepository {
                 skip,
                 take: query.limit,
                 orderBy: { createdAt: 'desc' },
-                include: { offers: true },
+                include: { offers: { include: OFFER_INCLUDE } },
             }),
         ]);
         return {

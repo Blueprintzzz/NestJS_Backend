@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { CustomBookingStatus } from '@prisma/client';
+import { CustomBookingStatus, VehicleType } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
     IsArray,
@@ -10,17 +10,18 @@ import {
     IsOptional,
     IsPositive,
     IsString,
+    IsUUID,
     Min,
     MinLength,
 } from 'class-validator';
 
 export class CreateCustomBookingDto {
-    @ApiProperty({ example: 'Custom hill country trip' })
+    @ApiProperty({ example: 'Hill Country Trip' })
     @IsString()
     @MinLength(3)
     title: string;
 
-    @ApiProperty({ example: 'Looking for a private tour covering Ella and Nuwara Eliya.' })
+    @ApiProperty({ example: 'Looking for a private driver for a hill country tour.' })
     @IsString()
     @MinLength(10)
     description: string;
@@ -38,11 +39,28 @@ export class CreateCustomBookingDto {
     @Min(1)
     numberOfPeople: number;
 
-    @ApiPropertyOptional({ example: 800.00 })
+    @ApiPropertyOptional({ example: 800.0 })
     @IsOptional()
     @IsNumber()
     @IsPositive()
     budget?: number;
+
+    @ApiProperty({ example: 'Colombo Fort' })
+    @IsString()
+    pickupLocation: string;
+
+    @ApiProperty({ example: 'Ella' })
+    @IsString()
+    dropoffLocation: string;
+
+    @ApiProperty({ enum: VehicleType })
+    @IsEnum(VehicleType)
+    requestedVehicleType: VehicleType;
+
+    @ApiPropertyOptional({ description: 'Specific vehicle model ID (optional)' })
+    @IsOptional()
+    @IsUUID()
+    requestedModelId?: string;
 
     @ApiPropertyOptional({ type: [String], example: ['Ella', 'Nuwara Eliya'] })
     @IsOptional()
@@ -50,22 +68,31 @@ export class CreateCustomBookingDto {
     @IsString({ each: true })
     destinations?: string[];
 
-    @ApiPropertyOptional({ example: 'Prefer eco-friendly accommodations.' })
+    @ApiPropertyOptional()
     @IsOptional()
     @IsString()
     requirements?: string;
 }
 
-export class CreateCustomBookingOfferDto {
-    @ApiProperty({ example: 650.00 })
+export class CreateDriverOfferDto {
+    @ApiProperty({ description: 'Vehicle ID that belongs to the driver' })
+    @IsUUID()
+    vehicleId: string;
+
+    @ApiProperty({ example: 650.0 })
     @IsNumber()
     @IsPositive()
     price: number;
 
-    @ApiProperty({ example: 'I can provide a comfortable SUV with hotel pickups and all transfers.' })
+    @ApiPropertyOptional({ example: 'I can provide a comfortable SUV with hotel pickups.' })
+    @IsOptional()
     @IsString()
-    @MinLength(10)
-    description: string;
+    message?: string;
+
+    @ApiPropertyOptional({ example: '30 minutes' })
+    @IsOptional()
+    @IsString()
+    eta?: string;
 
     @ApiProperty({ example: '2026-09-15' })
     @IsDateString()

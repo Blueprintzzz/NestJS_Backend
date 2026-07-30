@@ -10,7 +10,9 @@ export class VehicleAvailabilityEntity {
 
 export class VehicleEntity {
   id: string;
-  name: string;
+  driverId: string;
+  vehicleModelId: string;
+  vehicleModelName?: string;
   type: VehicleType;
   capacity: number;
   pricePerDay: number;
