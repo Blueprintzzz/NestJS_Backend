@@ -83,6 +83,10 @@ export class PackagesService {
     return this.repo.addInclusion(packageId, dto);
   }
 
+  async getPackagesByAdmin(adminId: string, query: PackageQueryDto): Promise<Pagination<TourPackageEntity>> {
+    return this.repo.findByAdminId(adminId, query);
+  }
+
   async calculateEstimatedCost(packageId: string, vehiclePricePerDay: number, numDays: number): Promise<number> {
     const pkg = await this.getPackageById(packageId);
     return pkg.basePrice + vehiclePricePerDay * numDays;

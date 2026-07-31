@@ -22,4 +22,5 @@ export class DrizzlePackageRepository implements IPackageRepository {
   addItinerary(_packageId: string, _dto: AddItineraryDto): Promise<PackageItineraryEntity> { throw new Error('Drizzle not implemented'); }
   updateItinerary(_packageId: string, _day: number, _dto: Partial<AddItineraryDto>): Promise<PackageItineraryEntity> { throw new Error('Drizzle not implemented'); }
   addInclusion(_packageId: string, _dto: AddInclusionDto): Promise<PackageInclusionEntity> { throw new Error('Drizzle not implemented'); }
+  findByAdminId(_adminId: string, _query: PackageQueryDto): Promise<Pagination<TourPackageEntity>> { throw new Error('Drizzle not implemented'); }
 }

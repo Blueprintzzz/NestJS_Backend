@@ -39,6 +39,15 @@ export class PackagesController {
     return this.service.getFeaturedPackages();
   }
 
+  @Get('my')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.DRIVER, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get own packages (DRIVER or ADMIN)' })
+  getMyPackages(@CurrentUser() user: any, @Query() query: PackageQueryDto) {
+    return this.service.getPackagesByAdmin(user.id, query);
+  }
+
   @Get('category/:category')
   @ApiParam({ name: 'category', enum: PackageCategory })
   @ApiOperation({ summary: 'Get packages by category' })

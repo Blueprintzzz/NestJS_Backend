@@ -117,6 +117,28 @@ export class PrismaPackageRepository implements IPackageRepository {
     return this.prisma.packageInclusion.create({ data: { packageId, ...dto } } as any);
   }
 
+  async findByAdminId(adminId: string, query: PackageQueryDto): Promise<Pagination<TourPackageEntity>> {
+    const where = { adminId };
+    const skip = (query.page - 1) * query.limit;
+    const [total, data] = await Promise.all([
+      this.prisma.tourPackage.count({ where }),
+      this.prisma.tourPackage.findMany({
+        where,
+        skip,
+        take: query.limit,
+        orderBy: { createdAt: 'desc' },
+        include: { itineraries: true, inclusions: true },
+      }),
+    ]);
+    return {
+      data: data.map(mapPkg),
+      total,
+      page: query.page,
+      limit: query.limit,
+      pages: Math.ceil(total / query.limit),
+    };
+  }
+
   private buildWhere(query: PackageQueryDto): any {
     const where: any = { status: ResourceStatus.ACTIVE };
     if (query.category) where.category = query.category;

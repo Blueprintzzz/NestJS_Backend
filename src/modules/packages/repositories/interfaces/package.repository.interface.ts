@@ -25,4 +25,5 @@ export interface IPackageRepository {
   addItinerary(packageId: string, dto: AddItineraryDto): Promise<PackageItineraryEntity>;
   updateItinerary(packageId: string, day: number, dto: Partial<AddItineraryDto>): Promise<PackageItineraryEntity>;
   addInclusion(packageId: string, dto: AddInclusionDto): Promise<PackageInclusionEntity>;
+  findByAdminId(adminId: string, query: PackageQueryDto): Promise<Pagination<TourPackageEntity>>;
 }
