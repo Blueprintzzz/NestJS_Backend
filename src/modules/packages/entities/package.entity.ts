@@ -7,6 +7,8 @@ export class PackageItineraryEntity {
   title: string;
   description: string;
   attractions: string;
+  airportPickup: boolean;
+  airportDropoff: boolean;
 }
 
 export class PackageInclusionEntity {

@@ -215,13 +215,15 @@ model TourPackage {
 }
 
 model PackageItinerary {
-  id          String      @id @default(uuid())
-  packageId   String
-  day         Int
-  title       String
-  description String
-  attractions String
-  package     TourPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  id              String      @id @default(uuid())
+  packageId       String
+  day             Int
+  title           String
+  description     String
+  attractions     String
+  airportPickup   Boolean     @default(false)
+  airportDropoff  Boolean     @default(false)
+  package         TourPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
 
   @@unique([packageId, day])
   @@index([packageId])

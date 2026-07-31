@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsBoolean,
   IsEnum,
   IsInt,
   IsNumber,
@@ -30,6 +31,8 @@ export class AddItineraryDto {
   @ApiProperty() @IsString() title: string;
   @ApiProperty() @IsString() description: string;
   @ApiProperty() @IsString() attractions: string;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() airportPickup?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() airportDropoff?: boolean;
 }
 
 export class AddInclusionDto {
