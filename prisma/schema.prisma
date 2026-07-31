@@ -219,7 +219,7 @@ model PackageItinerary {
   day             Int
   title           String
   description     String
-  attractions     String
+  destinations    String
   airportPickup   Boolean     @default(false)
   airportDropoff  Boolean     @default(false)
   package         TourPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)

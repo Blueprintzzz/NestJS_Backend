@@ -30,7 +30,7 @@ export class AddItineraryDto {
   @ApiProperty() @IsInt() @Min(1) day: number;
   @ApiProperty() @IsString() title: string;
   @ApiProperty() @IsString() description: string;
-  @ApiProperty() @IsString() attractions: string;
+  @ApiProperty() @IsString() destinations: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() airportPickup?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() airportDropoff?: boolean;
 }

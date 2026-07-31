@@ -6,7 +6,7 @@ export class PackageItineraryEntity {
   day: number;
   title: string;
   description: string;
-  attractions: string;
+  destinations: string;
   airportPickup: boolean;
   airportDropoff: boolean;
 }
