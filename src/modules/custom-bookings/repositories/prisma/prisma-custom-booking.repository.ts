@@ -5,15 +5,10 @@ import {
     CreateCustomBookingDto,
     CreateDriverOfferDto,
     CustomBookingQueryDto,
+    UpdateCustomBookingDto,
 } from '../../dto/custom-booking.dto';
-import {
-    CustomBookingEntity,
-    DriverOfferEntity,
-} from '../../entities/custom-booking.entity';
-import {
-    ICustomBookingRepository,
-    Pagination,
-} from '../interfaces/custom-booking.repository.interface';
+import { CustomBookingEntity, DriverOfferEntity } from '../../entities/custom-booking.entity';
+import { ICustomBookingRepository, Pagination } from '../interfaces/custom-booking.repository.interface';
 
 function toNumber(val: any): number | null {
     if (val == null) return null;
@@ -25,9 +20,9 @@ function mapOffer(raw: any): DriverOfferEntity {
         id: raw.id,
         customBookingId: raw.customBookingId,
         driverId: raw.driverId,
-        driverName: raw.driver ? `${raw.driver.firstName} ${raw.driver.lastName}` : undefined,
+        driver: raw.driver,
         vehicleId: raw.vehicleId,
-        vehicleInfo: raw.vehicle ? `${raw.vehicle.vehicleModel?.name ?? ''} ${raw.vehicle.registrationNumber}`.trim() : undefined,
+        vehicle: raw.vehicle,
         price: toNumber(raw.price) as number,
         message: raw.message,
         eta: raw.eta,
@@ -43,6 +38,7 @@ function mapBooking(raw: any): CustomBookingEntity {
         id: raw.id,
         bookingNumber: raw.bookingNumber,
         userId: raw.userId,
+        user: raw.user,
         title: raw.title,
         description: raw.description,
         startDate: raw.startDate,
@@ -53,6 +49,7 @@ function mapBooking(raw: any): CustomBookingEntity {
         dropoffLocation: raw.dropoffLocation,
         requestedVehicleType: raw.requestedVehicleType,
         requestedModelId: raw.requestedModelId,
+        requestedModel: raw.requestedModel,
         destinations: Array.isArray(raw.destinations) ? raw.destinations : [],
         requirements: raw.requirements,
         status: raw.status,
@@ -60,23 +57,49 @@ function mapBooking(raw: any): CustomBookingEntity {
         createdAt: raw.createdAt,
         updatedAt: raw.updatedAt,
         offers: raw.offers ? raw.offers.map(mapOffer) : undefined,
+        _count: raw._count,
     };
 }
 
 const OFFER_INCLUDE = {
-    driver: { select: { firstName: true, lastName: true } },
-    vehicle: { select: { registrationNumber: true, vehicleModel: { select: { name: true } } } },
+    driver: {
+        select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            driverProfile: { select: { rating: true, totalTrips: true, isVerified: true } },
+        },
+    },
+    vehicle: {
+        select: {
+            id: true,
+            type: true,
+            capacity: true,
+            pricePerDay: true,
+            images: true,
+            vehicleModel: { select: { name: true } },
+        },
+    },
+};
+
+const BOOKING_INCLUDE = {
+    user: { select: { id: true, firstName: true, lastName: true, email: true, phone: true } },
+    requestedModel: { select: { id: true, name: true, type: true } },
+    offers: { include: OFFER_INCLUDE },
+};
+
+const BOOKING_LIST_INCLUDE = {
+    user: { select: { id: true, firstName: true, lastName: true, email: true, phone: true } },
+    requestedModel: { select: { id: true, name: true, type: true } },
+    _count: { select: { offers: true } },
 };
 
 @Injectable()
 export class PrismaCustomBookingRepository implements ICustomBookingRepository {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(private readonly prisma: PrismaService) {}
 
-    async create(
-        dto: CreateCustomBookingDto,
-        userId: string,
-        bookingNumber: string,
-    ): Promise<CustomBookingEntity> {
+    async create(dto: CreateCustomBookingDto, userId: string, bookingNumber: string): Promise<CustomBookingEntity> {
         const booking = await this.prisma.customBooking.create({
             data: {
                 bookingNumber,
@@ -94,7 +117,7 @@ export class PrismaCustomBookingRepository implements ICustomBookingRepository {
                 destinations: dto.destinations ?? [],
                 requirements: dto.requirements,
             },
-            include: { offers: { include: OFFER_INCLUDE } },
+            include: BOOKING_INCLUDE,
         });
         return mapBooking(booking);
     }
@@ -102,31 +125,57 @@ export class PrismaCustomBookingRepository implements ICustomBookingRepository {
     async findById(id: string): Promise<CustomBookingEntity | null> {
         const booking = await this.prisma.customBooking.findUnique({
             where: { id },
-            include: { offers: { include: OFFER_INCLUDE } },
+            include: BOOKING_INCLUDE,
         });
         return booking ? mapBooking(booking) : null;
     }
 
-    async findByUserId(
-        userId: string,
-        query: CustomBookingQueryDto,
-    ): Promise<Pagination<CustomBookingEntity>> {
+    async findByUserId(userId: string, query: CustomBookingQueryDto): Promise<Pagination<CustomBookingEntity>> {
         const where: any = { userId };
         if (query.status) where.status = query.status;
-        return this.paginate(where, query);
+        return this.paginate(where, query, BOOKING_INCLUDE);
     }
 
     async findAll(query: CustomBookingQueryDto): Promise<Pagination<CustomBookingEntity>> {
         const where: any = {};
         if (query.status) where.status = query.status;
-        return this.paginate(where, query);
+        if (query.search) {
+            where.OR = [
+                { bookingNumber: { contains: query.search, mode: 'insensitive' } },
+                { title: { contains: query.search, mode: 'insensitive' } },
+            ];
+        }
+        return this.paginate(where, query, BOOKING_LIST_INCLUDE);
+    }
+
+    async update(id: string, dto: UpdateCustomBookingDto): Promise<CustomBookingEntity> {
+        const data: any = {};
+        if (dto.title !== undefined) data.title = dto.title;
+        if (dto.description !== undefined) data.description = dto.description;
+        if (dto.startDate !== undefined) data.startDate = new Date(dto.startDate);
+        if (dto.endDate !== undefined) data.endDate = new Date(dto.endDate);
+        if (dto.numberOfPeople !== undefined) data.numberOfPeople = dto.numberOfPeople;
+        if (dto.budget !== undefined) data.budget = dto.budget;
+        if (dto.pickupLocation !== undefined) data.pickupLocation = dto.pickupLocation;
+        if (dto.dropoffLocation !== undefined) data.dropoffLocation = dto.dropoffLocation;
+        if (dto.requestedVehicleType !== undefined) data.requestedVehicleType = dto.requestedVehicleType;
+        if (dto.requestedModelId !== undefined) data.requestedModelId = dto.requestedModelId;
+        if (dto.destinations !== undefined) data.destinations = dto.destinations;
+        if (dto.requirements !== undefined) data.requirements = dto.requirements;
+
+        const booking = await this.prisma.customBooking.update({
+            where: { id },
+            data,
+            include: BOOKING_INCLUDE,
+        });
+        return mapBooking(booking);
     }
 
     async updateStatus(id: string, status: CustomBookingStatus): Promise<CustomBookingEntity> {
         const booking = await this.prisma.customBooking.update({
             where: { id },
             data: { status },
-            include: { offers: { include: OFFER_INCLUDE } },
+            include: BOOKING_INCLUDE,
         });
         return mapBooking(booking);
     }
@@ -135,7 +184,7 @@ export class PrismaCustomBookingRepository implements ICustomBookingRepository {
         const booking = await this.prisma.customBooking.update({
             where: { id },
             data: { selectedOfferId: offerId, status: CustomBookingStatus.CONFIRMED },
-            include: { offers: { include: OFFER_INCLUDE } },
+            include: BOOKING_INCLUDE,
         });
         return mapBooking(booking);
     }
@@ -145,11 +194,7 @@ export class PrismaCustomBookingRepository implements ICustomBookingRepository {
         return true;
     }
 
-    async createOffer(
-        customBookingId: string,
-        driverId: string,
-        dto: CreateDriverOfferDto,
-    ): Promise<DriverOfferEntity> {
+    async createOffer(customBookingId: string, driverId: string, dto: CreateDriverOfferDto): Promise<DriverOfferEntity> {
         const offer = await this.prisma.driverOffer.create({
             data: {
                 customBookingId,
@@ -182,12 +227,17 @@ export class PrismaCustomBookingRepository implements ICustomBookingRepository {
         return offer ? mapOffer(offer) : null;
     }
 
-    async findOfferByDriverAndBooking(
-        driverId: string,
-        customBookingId: string,
-    ): Promise<DriverOfferEntity | null> {
+    async findOfferByDriverAndBooking(driverId: string, customBookingId: string): Promise<DriverOfferEntity | null> {
         const offer = await this.prisma.driverOffer.findFirst({
             where: { driverId, customBookingId },
+            include: OFFER_INCLUDE,
+        });
+        return offer ? mapOffer(offer) : null;
+    }
+
+    async findActivePendingOfferByDriverAndBooking(driverId: string, customBookingId: string): Promise<DriverOfferEntity | null> {
+        const offer = await this.prisma.driverOffer.findFirst({
+            where: { driverId, customBookingId, status: OfferStatus.PENDING },
             include: OFFER_INCLUDE,
         });
         return offer ? mapOffer(offer) : null;
@@ -217,10 +267,7 @@ export class PrismaCustomBookingRepository implements ICustomBookingRepository {
         });
     }
 
-    private async paginate(
-        where: any,
-        query: CustomBookingQueryDto,
-    ): Promise<Pagination<CustomBookingEntity>> {
+    private async paginate(where: any, query: CustomBookingQueryDto, include: any): Promise<Pagination<CustomBookingEntity>> {
         const skip = (query.page - 1) * query.limit;
         const [total, rows] = await Promise.all([
             this.prisma.customBooking.count({ where }),
@@ -229,7 +276,7 @@ export class PrismaCustomBookingRepository implements ICustomBookingRepository {
                 skip,
                 take: query.limit,
                 orderBy: { createdAt: 'desc' },
-                include: { offers: { include: OFFER_INCLUDE } },
+                include,
             }),
         ]);
         return {

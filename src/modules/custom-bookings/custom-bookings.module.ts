@@ -1,7 +1,6 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthModule } from '../auth/auth.module';
-import { VehiclesModule } from '../vehicles/vehicles.module';
 import { CustomBookingController } from './controllers/custom-booking.controller';
 import {
     CustomBookingConfirmedListener,
@@ -12,10 +11,7 @@ import { customBookingRepositoryProvider } from './repositories/repository.provi
 import { CustomBookingService } from './services/custom-booking.service';
 
 @Module({
-    imports: [
-        forwardRef(() => AuthModule),
-        forwardRef(() => VehiclesModule),
-    ],
+    imports: [AuthModule],
     controllers: [CustomBookingController],
     providers: [
         PrismaService,
@@ -27,4 +23,4 @@ import { CustomBookingService } from './services/custom-booking.service';
     ],
     exports: [CustomBookingService],
 })
-export class CustomBookingsModule { }
+export class CustomBookingsModule {}

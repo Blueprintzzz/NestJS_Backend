@@ -4,9 +4,9 @@ export class DriverOfferEntity {
     id: string;
     customBookingId: string;
     driverId: string;
-    driverName?: string;
+    driver?: any;
     vehicleId: string;
-    vehicleInfo?: string;
+    vehicle?: any;
     price: number;
     message?: string | null;
     eta?: string | null;
@@ -20,6 +20,7 @@ export class CustomBookingEntity {
     id: string;
     bookingNumber: string;
     userId: string;
+    user?: any;
     title: string;
     description: string;
     startDate: Date;
@@ -30,6 +31,7 @@ export class CustomBookingEntity {
     dropoffLocation: string;
     requestedVehicleType: VehicleType;
     requestedModelId?: string | null;
+    requestedModel?: any;
     destinations: string[];
     requirements?: string | null;
     status: CustomBookingStatus;
@@ -37,4 +39,5 @@ export class CustomBookingEntity {
     createdAt: Date;
     updatedAt: Date;
     offers?: DriverOfferEntity[];
+    _count?: any;
 }

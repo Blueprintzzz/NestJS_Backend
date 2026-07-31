@@ -8,7 +8,6 @@ import {
     IsInt,
     IsNumber,
     IsOptional,
-    IsPositive,
     IsString,
     IsUUID,
     Min,
@@ -16,12 +15,12 @@ import {
 } from 'class-validator';
 
 export class CreateCustomBookingDto {
-    @ApiProperty({ example: 'Hill Country Trip' })
+    @ApiProperty()
     @IsString()
     @MinLength(3)
     title: string;
 
-    @ApiProperty({ example: 'Looking for a private driver for a hill country tour.' })
+    @ApiProperty()
     @IsString()
     @MinLength(10)
     description: string;
@@ -42,14 +41,14 @@ export class CreateCustomBookingDto {
     @ApiPropertyOptional({ example: 800.0 })
     @IsOptional()
     @IsNumber()
-    @IsPositive()
+    @Min(0)
     budget?: number;
 
-    @ApiProperty({ example: 'Colombo Fort' })
+    @ApiProperty()
     @IsString()
     pickupLocation: string;
 
-    @ApiProperty({ example: 'Ella' })
+    @ApiProperty()
     @IsString()
     dropoffLocation: string;
 
@@ -57,12 +56,77 @@ export class CreateCustomBookingDto {
     @IsEnum(VehicleType)
     requestedVehicleType: VehicleType;
 
-    @ApiPropertyOptional({ description: 'Specific vehicle model ID (optional)' })
+    @ApiPropertyOptional()
     @IsOptional()
     @IsUUID()
     requestedModelId?: string;
 
-    @ApiPropertyOptional({ type: [String], example: ['Ella', 'Nuwara Eliya'] })
+    @ApiProperty({ type: [String] })
+    @IsArray()
+    @IsString({ each: true })
+    destinations: string[];
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    requirements?: string;
+}
+
+export class UpdateCustomBookingDto {
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MinLength(3)
+    title?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    description?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsDateString()
+    startDate?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsDateString()
+    endDate?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsInt()
+    @Min(1)
+    numberOfPeople?: number;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    budget?: number;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    pickupLocation?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    dropoffLocation?: string;
+
+    @ApiPropertyOptional({ enum: VehicleType })
+    @IsOptional()
+    @IsEnum(VehicleType)
+    requestedVehicleType?: VehicleType;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsUUID()
+    requestedModelId?: string;
+
+    @ApiPropertyOptional({ type: [String] })
     @IsOptional()
     @IsArray()
     @IsString({ each: true })
@@ -75,21 +139,21 @@ export class CreateCustomBookingDto {
 }
 
 export class CreateDriverOfferDto {
-    @ApiProperty({ description: 'Vehicle ID that belongs to the driver' })
+    @ApiProperty()
     @IsUUID()
     vehicleId: string;
 
     @ApiProperty({ example: 650.0 })
     @IsNumber()
-    @IsPositive()
+    @Min(0)
     price: number;
 
-    @ApiPropertyOptional({ example: 'I can provide a comfortable SUV with hotel pickups.' })
+    @ApiPropertyOptional()
     @IsOptional()
     @IsString()
     message?: string;
 
-    @ApiPropertyOptional({ example: '30 minutes' })
+    @ApiPropertyOptional({ example: 'Within 2 days' })
     @IsOptional()
     @IsString()
     eta?: string;
@@ -124,4 +188,9 @@ export class CustomBookingQueryDto {
     @IsInt()
     @Min(1)
     limit: number = 10;
+
+    @ApiPropertyOptional({ description: 'Search by bookingNumber or title' })
+    @IsOptional()
+    @IsString()
+    search?: string;
 }
