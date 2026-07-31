@@ -21,6 +21,7 @@ export class CreateDestinationDto {
   @ApiProperty() @IsString() @MinLength(10) description: string;
   @ApiProperty({ enum: DestinationCategory }) @IsEnum(DestinationCategory) category: DestinationCategory;
   @ApiPropertyOptional({ type: [String] }) @IsArray() @IsString({ each: true }) @IsOptional() images: string[] = [];
+  @ApiPropertyOptional() @IsString() @IsOptional() district?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() coverImage?: string;
   @ApiProperty() @IsNumber() latitude: number;
   @ApiProperty() @IsNumber() longitude: number;
@@ -38,6 +39,7 @@ export class UpdateDestinationDto {
   @ApiPropertyOptional() @IsString() @IsOptional() description?: string;
   @ApiPropertyOptional({ enum: DestinationCategory }) @IsEnum(DestinationCategory) @IsOptional() category?: DestinationCategory;
   @ApiPropertyOptional({ type: [String] }) @IsArray() @IsString({ each: true }) @IsOptional() images?: string[];
+  @ApiPropertyOptional() @IsString() @IsOptional() district?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() coverImage?: string;
   @ApiPropertyOptional() @IsNumber() @IsOptional() latitude?: number;
   @ApiPropertyOptional() @IsNumber() @IsOptional() longitude?: number;
@@ -53,6 +55,7 @@ export class UpdateDestinationDto {
 
 export class DestinationQueryDto {
   @ApiPropertyOptional({ enum: DestinationCategory }) @IsEnum(DestinationCategory) @IsOptional() category?: DestinationCategory;
+  @ApiPropertyOptional() @IsString() @IsOptional() district?: string;
   @ApiPropertyOptional() @IsString() @IsOptional() search?: string;
   @ApiPropertyOptional() @IsBoolean() @IsOptional() @Type(() => Boolean) featured?: boolean;
   @ApiPropertyOptional({ default: 1 }) @Type(() => Number) @IsInt() @Min(1) @IsOptional() page: number = 1;

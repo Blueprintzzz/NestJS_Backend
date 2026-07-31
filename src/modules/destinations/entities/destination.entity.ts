@@ -3,6 +3,7 @@ export class DestinationEntity {
   name: string;
   description: string;
   category: string;
+  district?: string | null;
   images: string[];
   coverImage?: string | null;
   latitude: number;

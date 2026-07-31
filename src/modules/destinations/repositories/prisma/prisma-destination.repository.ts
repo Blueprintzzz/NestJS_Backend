@@ -30,6 +30,7 @@ export class PrismaDestinationRepository implements IDestinationRepository {
   async findAll(query: DestinationQueryDto): Promise<Pagination<DestinationEntity>> {
     const where: any = { status: 'ACTIVE' };
     if (query.category) where.category = query.category;
+    if (query.district) where.district = { contains: query.district, mode: 'insensitive' };
     if (query.search) where.name = { contains: query.search, mode: 'insensitive' };
     if (query.featured !== undefined) where.featured = query.featured;
     const skip = (query.page - 1) * query.limit;
