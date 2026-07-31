@@ -205,7 +205,6 @@ model TourPackage {
   adminId          String
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
-  destinationId    String?
   itineraries      PackageItinerary[]
   inclusions       PackageInclusion[]
   bookings         Booking[]
