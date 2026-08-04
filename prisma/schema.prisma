@@ -75,6 +75,8 @@ model VehicleModel {
   id             String          @id @default(uuid())
   name           String          @unique
   type           VehicleType
+  icon           String?
+  image          String?
   vehicles       Vehicle[]
   customBookings CustomBooking[]
   createdAt      DateTime        @default(now())

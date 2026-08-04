@@ -11,6 +11,16 @@ export class CreateVehicleModelDto {
     @ApiProperty({ enum: VehicleType })
     @IsEnum(VehicleType)
     type: VehicleType;
+
+    @ApiPropertyOptional()
+    @IsString()
+    @IsOptional()
+    icon?: string;
+
+    @ApiPropertyOptional()
+    @IsString()
+    @IsOptional()
+    image?: string;
 }
 
 export class UpdateVehicleModelDto {
@@ -24,6 +34,16 @@ export class UpdateVehicleModelDto {
     @IsOptional()
     @IsEnum(VehicleType)
     type?: VehicleType;
+
+    @ApiPropertyOptional()
+    @IsString()
+    @IsOptional()
+    icon?: string;
+
+    @ApiPropertyOptional()
+    @IsString()
+    @IsOptional()
+    image?: string;
 }
 
 export class VehicleModelQueryDto {

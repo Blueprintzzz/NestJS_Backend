@@ -10,6 +10,8 @@ function mapModel(raw: any): VehicleModelEntity {
         id: raw.id,
         name: raw.name,
         type: raw.type,
+        icon: raw.icon ?? null,
+        image: raw.image ?? null,
         createdAt: raw.createdAt,
         updatedAt: raw.updatedAt,
     };
