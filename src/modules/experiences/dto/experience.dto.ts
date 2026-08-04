@@ -12,8 +12,9 @@ export class CreateExperienceDto {
   @ApiPropertyOptional() @IsString() @IsOptional() image?: string;
   @ApiPropertyOptional({ type: [String] }) @IsArray() @IsString({ each: true }) @IsOptional() images?: string[];
   @ApiPropertyOptional() @IsString() @IsOptional() location?: string;
-  @ApiPropertyOptional() @IsString() @IsOptional() districtId?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() destinationId?: string;
   @ApiPropertyOptional() @IsBoolean() @IsOptional() featured?: boolean;
+  @ApiPropertyOptional() @IsString() @IsOptional() status?: string;
 }
 
 export class UpdateExperienceDto {
@@ -25,7 +26,7 @@ export class UpdateExperienceDto {
   @ApiPropertyOptional() @IsString() @IsOptional() image?: string;
   @ApiPropertyOptional({ type: [String] }) @IsArray() @IsString({ each: true }) @IsOptional() images?: string[];
   @ApiPropertyOptional() @IsString() @IsOptional() location?: string;
-  @ApiPropertyOptional() @IsString() @IsOptional() districtId?: string;
+  @ApiPropertyOptional() @IsString() @IsOptional() destinationId?: string;
   @ApiPropertyOptional() @IsBoolean() @IsOptional() featured?: boolean;
   @ApiPropertyOptional() @IsString() @IsOptional() status?: string;
 }

@@ -17,7 +17,7 @@ export class ExperienceEntity {
   image?: string | null;
   images: string[];
   location?: string | null;
-  districtId?: string | null;
+  destinationId?: string | null;
   featured: boolean;
   status: string;
   rating?: number | null;
