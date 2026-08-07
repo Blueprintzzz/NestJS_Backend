@@ -56,6 +56,14 @@ export class BookingController {
     return this.bookingService.getUserBookings(user.id, query);
   }
 
+  @Get('driver/me')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.DRIVER)
+  @ApiOperation({ summary: "Get bookings for vehicles owned by the current driver" })
+  getMyDriverBookings(@Query() query: BookingQueryDto, @CurrentUser() user: any) {
+    return this.bookingService.getDriverBookings(user.id, query);
+  }
+
   @Get(':id')
   @ApiParam({ name: 'id' })
   @ApiOperation({ summary: 'Get booking by ID' })

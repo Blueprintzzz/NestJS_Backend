@@ -185,6 +185,57 @@ export class PrismaBookingRepository implements IBookingRepository {
     return payments.map((p) => ({ ...p, amount: toNumber(p.amount) }));
   }
 
+  async findByDriverId(driverId: string, query: BookingQueryDto): Promise<Pagination<BookingEntity>> {
+    const skip = (query.page - 1) * query.limit;
+
+    const driverVehicles = await this.prisma.vehicle.findMany({
+      where: { driverId },
+      select: { id: true },
+    });
+    const vehicleIds = driverVehicles.map((v) => v.id);
+
+    if (vehicleIds.length === 0) {
+      return { data: [], total: 0, page: query.page, limit: query.limit, pages: 0 };
+    }
+
+    const where: any = { vehicleId: { in: vehicleIds } };
+    if (query.status) where.status = query.status;
+    if (query.paymentStatus) where.paymentStatus = query.paymentStatus;
+    if (query.startDate) where.startDate = { gte: new Date(query.startDate) };
+    if (query.endDate) where.endDate = { lte: new Date(query.endDate) };
+
+    const [total, rows] = await Promise.all([
+      this.prisma.booking.count({ where }),
+      this.prisma.booking.findMany({
+        where,
+        skip,
+        take: query.limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          passengers: true,
+          payments: true,
+          tourPackage: { select: { id: true, name: true, category: true } },
+          vehicle: {
+            select: {
+              id: true,
+              type: true,
+              registrationNumber: true,
+              vehicleModel: { select: { id: true, name: true } },
+            },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      data: rows.map((b) => this.mapBooking(b)),
+      total,
+      page: query.page,
+      limit: query.limit,
+      pages: Math.ceil(total / query.limit),
+    };
+  }
+
   private buildWhere(query: BookingQueryDto): any {
     const where: any = {};
     if (query.status) where.status = query.status;

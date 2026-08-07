@@ -309,4 +309,16 @@ export class CustomBookingService {
 
         return this.repo.updateOfferStatus(offerId, OfferStatus.REJECTED);
     }
+
+    // ─── 12. Driver: available custom bookings ────────────────────────────────
+
+    async getAvailableForDriver(driverId: string, query: any) {
+        return this.repo.findAvailableForDriver(driverId, query);
+    }
+
+    // ─── 13. Driver: bookings where driver submitted an offer ─────────────────
+
+    async getMyOffers(driverId: string, query: any) {
+        return this.repo.findByDriverOffer(driverId, query);
+    }
 }

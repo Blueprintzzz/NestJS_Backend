@@ -33,4 +33,6 @@ export interface ICustomBookingRepository {
     findAcceptedOfferByBookingId(customBookingId: string): Promise<DriverOfferEntity | null>;
     updateOfferStatus(offerId: string, status: OfferStatus): Promise<DriverOfferEntity>;
     rejectAllOtherOffers(customBookingId: string, acceptedOfferId: string): Promise<void>;
+    findAvailableForDriver(driverId: string, query: any): Promise<Pagination<CustomBookingEntity>>;
+    findByDriverOffer(driverId: string, query: any): Promise<Pagination<CustomBookingEntity>>;
 }

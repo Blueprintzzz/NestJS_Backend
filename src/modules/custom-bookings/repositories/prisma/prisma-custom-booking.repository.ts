@@ -267,6 +267,80 @@ export class PrismaCustomBookingRepository implements ICustomBookingRepository {
         });
     }
 
+    async findAvailableForDriver(driverId: string, query: any): Promise<Pagination<CustomBookingEntity>> {
+        const page = Number(query.page ?? 1);
+        const limit = Number(query.limit ?? 10);
+        const skip = (page - 1) * limit;
+
+        const driverVehicles = await this.prisma.vehicle.findMany({
+            where: { driverId, status: 'ACTIVE' },
+            select: { type: true, vehicleModelId: true },
+        });
+
+        if (driverVehicles.length === 0) {
+            return { data: [], total: 0, page, limit, pages: 0 };
+        }
+
+        const vehicleTypes = [...new Set(driverVehicles.map((v) => v.type))];
+        const modelIds = [...new Set(driverVehicles.map((v) => v.vehicleModelId).filter(Boolean))];
+
+        const where: any = {
+            status: { in: ['PENDING', 'OFFER_RECEIVED'] },
+            OR: [
+                { requestedVehicleType: { in: vehicleTypes } },
+                ...(modelIds.length > 0 ? [{ requestedModelId: { in: modelIds } }] : []),
+            ],
+            NOT: { offers: { some: { driverId } } },
+        };
+
+        const [total, rows] = await Promise.all([
+            this.prisma.customBooking.count({ where }),
+            this.prisma.customBooking.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    requestedModel: { select: { id: true, name: true, type: true } },
+                    offers: { select: { id: true, driverId: true, status: true, price: true } },
+                },
+            }),
+        ]);
+
+        return { data: rows.map(mapBooking), total, page, limit, pages: Math.ceil(total / limit) };
+    }
+
+    async findByDriverOffer(driverId: string, query: any): Promise<Pagination<CustomBookingEntity>> {
+        const page = Number(query.page ?? 1);
+        const limit = Number(query.limit ?? 10);
+        const skip = (page - 1) * limit;
+
+        const where: any = { offers: { some: { driverId } } };
+        if (query.status) where.status = query.status;
+
+        const [total, rows] = await Promise.all([
+            this.prisma.customBooking.count({ where }),
+            this.prisma.customBooking.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    requestedModel: { select: { id: true, name: true, type: true } },
+                    offers: {
+                        where: { driverId },
+                        select: {
+                            id: true, price: true, status: true,
+                            message: true, eta: true, validUntil: true, createdAt: true,
+                        },
+                    },
+                },
+            }),
+        ]);
+
+        return { data: rows.map(mapBooking), total, page, limit, pages: Math.ceil(total / limit) };
+    }
+
     private async paginate(where: any, query: CustomBookingQueryDto, include: any): Promise<Pagination<CustomBookingEntity>> {
         const skip = (query.page - 1) * query.limit;
         const [total, rows] = await Promise.all([

@@ -98,6 +98,10 @@ export class BookingService {
     return this.repo.getPaymentHistory(bookingId);
   }
 
+  async getDriverBookings(driverId: string, query: BookingQueryDto): Promise<Pagination<BookingEntity>> {
+    return this.repo.findByDriverId(driverId, query);
+  }
+
   validateBookingDates(startDate: string | Date, endDate: string | Date): void {
     const start = new Date(startDate);
     const end = new Date(endDate);

@@ -21,4 +21,5 @@ export interface IBookingRepository {
   removePassenger(passengerId: string): Promise<boolean>;
   recordPayment(bookingId: string, dto: RecordPaymentDto): Promise<BookingPaymentEntity>;
   getPaymentHistory(bookingId: string): Promise<BookingPaymentEntity[]>;
+  findByDriverId(driverId: string, query: BookingQueryDto): Promise<Pagination<BookingEntity>>;
 }

@@ -61,6 +61,48 @@ export class CustomBookingController {
         return this.service.findMine(user.id, query);
     }
 
+    // ─── Driver routes — MUST be before /:id ────────────────────────────────
+
+    @Get('driver/available/by-model')
+    @UseGuards(RolesGuard)
+    @Roles(UserRole.DRIVER)
+    @ApiOperation({ summary: 'Driver: available custom bookings grouped by vehicle model' })
+    async getAvailableByModel(@CurrentUser() user: any) {
+        const result = await this.service.getAvailableForDriver(user.id, { page: 1, limit: 100 });
+
+        const grouped: Record<string, { model: any; bookings: any[] }> = {};
+        for (const booking of result.data) {
+            const key = (booking as any).requestedModelId ?? (booking as any).requestedVehicleType;
+            if (!grouped[key]) {
+                grouped[key] = {
+                    model: (booking as any).requestedModel ?? {
+                        name: (booking as any).requestedVehicleType,
+                        type: (booking as any).requestedVehicleType,
+                    },
+                    bookings: [],
+                };
+            }
+            grouped[key].bookings.push(booking);
+        }
+        return Object.values(grouped);
+    }
+
+    @Get('driver/available')
+    @UseGuards(RolesGuard)
+    @Roles(UserRole.DRIVER)
+    @ApiOperation({ summary: 'Driver: custom bookings matching their vehicle types/models (excludes already-offered)' })
+    getAvailableForMe(@Query() query: any, @CurrentUser() user: any) {
+        return this.service.getAvailableForDriver(user.id, query);
+    }
+
+    @Get('driver/my-offers')
+    @UseGuards(RolesGuard)
+    @Roles(UserRole.DRIVER)
+    @ApiOperation({ summary: 'Driver: custom bookings where driver submitted an offer' })
+    getMyOffers(@Query() query: any, @CurrentUser() user: any) {
+        return this.service.getMyOffers(user.id, query);
+    }
+
     // ─── 4. Get by ID ─────────────────────────────────────────────────────────
 
     @Get(':id')

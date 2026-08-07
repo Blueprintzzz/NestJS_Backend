@@ -51,4 +51,7 @@ export class DrizzleBookingRepository implements IBookingRepository {
   getPaymentHistory(_bookingId: string): Promise<BookingPaymentEntity[]> {
     throw new Error('Drizzle not implemented');
   }
+  findByDriverId(_driverId: string, _query: BookingQueryDto): Promise<Pagination<BookingEntity>> {
+    throw new Error('Drizzle not implemented');
+  }
 }
