@@ -17,6 +17,7 @@ import { VehicleModelsModule } from './modules/vehicle-models/vehicle-models.mod
 import { DestinationsModule } from './modules/destinations/destinations.module';
 import { ExperiencesModule } from './modules/experiences/experiences.module';
 import { CustomBookingsModule } from './modules/custom-bookings/custom-bookings.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { CustomBookingsModule } from './modules/custom-bookings/custom-bookings.
     DestinationsModule,
     ExperiencesModule,
     CustomBookingsModule,
+    AiModule,
   ],
   controllers: [HealthController],
   providers: [PrismaService, DrizzleService],
